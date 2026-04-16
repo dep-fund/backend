@@ -1,15 +1,27 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from sqlalchemy.engine import URL
+
+
+def _read_secret(name: str, fallback: str = "") -> str:
+    """Lee un Docker Secret desde /run/secrets/, con fallback para desarrollo local."""
+    secret_path = Path(f"/run/secrets/{name}")
+    if secret_path.exists():
+        return secret_path.read_text().strip()
+    return fallback
+
 
 class Settings(BaseSettings):
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", 5433))
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "postgres")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "depfund")
     LOG_SQL_QUERIES: bool = os.getenv("LOG_SQL_QUERIES", "0") == "1"
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
+
+    # Estos se leen desde secrets, con fallback a env vars para desarrollo local
+    POSTGRES_USER: str = _read_secret("postgres_user", os.getenv("POSTGRES_USER", "postgres"))
+    POSTGRES_PASSWORD: str = _read_secret("postgres_password", os.getenv("POSTGRES_PASSWORD", "postgres"))
+    POSTGRES_DB: str = _read_secret("postgres_db", os.getenv("POSTGRES_DB", "depfund"))
+    SECRET_KEY: str = _read_secret("secret_key", os.getenv("SECRET_KEY", ""))
 
     @property
     def DATABASE_URL(self) -> str:

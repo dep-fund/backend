@@ -38,6 +38,8 @@ uvicorn app.main:app --reload --port 8000
 
 Create a `.env` file in the project root based on the variables listed in the [environment variables](#environment-variables) section below.
 
+> Never commit `.env` to the repository. It is already listed in `.gitignore`.
+
 ---
 
 ## Docker
@@ -59,6 +61,14 @@ docker exec -it db psql -U postgres -d depfund
 
 ---
 
+## Manual server healtcheck
+
+```bash
+GET http://localhost:8000/health
+```
+
+---
+
 ## Environment variables
 
 | Variable | Default | Description |
@@ -68,5 +78,5 @@ docker exec -it db psql -U postgres -d depfund
 | `POSTGRES_USER` | `postgres` | Database user |
 | `POSTGRES_PASSWORD` | `postgres` | Database password |
 | `POSTGRES_DB` | `depfund` | Database name |
-| `SECRET_KEY` | — | Secret key for token signing |
-| `LOG_SQL_QUERIES` | `false` | Set to `true` to echo SQL queries to stdout |
+| `SECRET_KEY` | — | Set to 1 automatically by Docker Compose |
+| `LOG_SQL_QUERIES` | `0` | Set to 1 to echo SQL queries to stdout |
