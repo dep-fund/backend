@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = _read_secret("postgres_password", os.getenv("POSTGRES_PASSWORD", "postgres"))
     POSTGRES_DB: str = _read_secret("postgres_db", os.getenv("POSTGRES_DB", "depfund"))
     SECRET_KEY: str = _read_secret("secret_key", os.getenv("SECRET_KEY", ""))
+    ADMIN_SECRET_KEY: str = _read_secret("admin_secret_key", os.getenv("ADMIN_SECRET_KEY", "develop"))
 
     @property
     def DATABASE_URL(self) -> str:
