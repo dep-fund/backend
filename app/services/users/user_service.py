@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
@@ -19,3 +19,13 @@ class UserService:
 
     async def get_by_email(self, email: str) -> Optional[User]:
         return await self.session.scalar(select(User).where(User.email == email))
+    
+    async def get_by_username_or_email(self, identifier: str) -> Optional[User]:
+        return await self.session.scalar(
+            select(User).where(
+                or_(
+                    User.username == identifier,
+                    User.email == identifier
+                )
+            )
+        )
