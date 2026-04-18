@@ -108,11 +108,13 @@ class PermissionService:
         self,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[int, List[PermissionRoleResponse]]:
+    ) -> tuple[int, List[DetailPermissionRoleResponse]]:
 
         query = (
             select(
+                Role.id.label("role_id"),
                 Role.type.label("role"),
+                Permission.id.label("permission_id"),
                 Permission.type.label("permission"),
             )
             .select_from(PermissionRole)
@@ -123,14 +125,17 @@ class PermissionService:
         total = await self.session.scalar(
             select(func.count()).select_from(query.subquery())
         )
+
         result = await self.session.execute(
             query.offset((page - 1) * page_size).limit(page_size)
         )
+
         rows = result.all()
+
         return total or 0, [
             DetailPermissionRoleResponse(
-                role_id=row.role.id,
-                permission_id=row.permission.id,
+                role_id=row.role_id,
+                permission_id=row.permission_id,
                 role=row.role,
                 permission=row.permission,
             )
