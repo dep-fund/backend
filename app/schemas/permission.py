@@ -17,6 +17,10 @@ class PermissionRoleCreateRequest(BaseModel):
     role_id: UUID
     permission_id: UUID
 
+class PermissionRoleDeleteRequest(BaseModel):
+    role_id: UUID
+    permission_id: UUID
+
 
 class PermissionRoleResponse(BaseModel):
     role_id: UUID

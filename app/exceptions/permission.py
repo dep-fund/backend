@@ -11,3 +11,8 @@ class PermissionRoleAlreadyAssigned(ExceptionHandler):
     message = "Permission already assigned to role."
     blocker = True
     
+class PermissionRoleNotFound(ExceptionHandler):
+    code = status.HTTP_404_NOT_FOUND
+    message = "Permission role not found."
+    blocker = True
+    

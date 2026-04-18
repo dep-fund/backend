@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
+from app.models.user import User
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.permission import DetailPermissionRoleResponse, PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleResponse
+from app.schemas.permission import DetailPermissionRoleResponse, PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleDeleteRequest, PermissionRoleResponse
 from app.core.dependencies.user_dependencies import get_current_admin_user
 from app.services.permission_service import PermissionService
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/admin/permission", tags=["Administrators - Permissio
 async def create(
     data: PermissionCreateRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     return await PermissionService(session).create(data)
 
@@ -25,6 +27,7 @@ async def list_permissions(
     page: int = Query(1, gt=0),
     page_size: int = Query(10, gt=0, le=100),
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     total, items = await PermissionService(session).list(
         page=page,
@@ -42,6 +45,7 @@ async def list_permissions(
 async def delete(
     type: str,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     return await PermissionService(session).delete(type)
 
@@ -49,8 +53,17 @@ async def delete(
 async def assign_permission_to_role(
     data: PermissionRoleCreateRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     return await PermissionService(session).assign_to_role(data)
+
+@router.delete("/assigned-permission", response_model=dict) # TODO: Separar responsabilidades con crud a parte para PermissionRole
+async def delete_assigned_permission_role(
+    data: PermissionRoleDeleteRequest,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
+):
+    return await PermissionService(session).delete_assigned_permission_role(data)
 
 @router.get(
     "/role-permissions",
@@ -60,6 +73,7 @@ async def list_role_permissions(
     page: int = Query(1, gt=0),
     page_size: int = Query(10, gt=0, le=100),
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     total, items = await PermissionService(session).list_assigned_permissions_roles(
         page=page,

@@ -2,11 +2,11 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.exceptions.permission import PermissionNotFound, PermissionRoleAlreadyAssigned
+from app.exceptions.permission import PermissionNotFound, PermissionRoleAlreadyAssigned, PermissionRoleNotFound
 from app.models.permission import Permission
 from app.models.permission_role import PermissionRole
 from app.models.role import Role
-from app.schemas.permission import DetailPermissionRoleResponse, PermissionCreateRequest, PermissionResponse, PermissionRoleCreateRequest, PermissionRoleResponse
+from app.schemas.permission import DetailPermissionRoleResponse, PermissionCreateRequest, PermissionResponse, PermissionRoleCreateRequest, PermissionRoleDeleteRequest, PermissionRoleResponse
 from app.services.role_service import RoleService
 
 class PermissionService:
@@ -83,6 +83,7 @@ class PermissionService:
 
         return {"detail": "Permission deleted successfully"}
     
+    
     async def assign_to_role(self, data: PermissionRoleCreateRequest) -> DetailPermissionRoleResponse:
         await RoleService(self.session).get_by_id(data.role_id)
         await PermissionService(self.session).get_by_id(data.permission_id)
@@ -103,6 +104,23 @@ class PermissionService:
             role_id=relation.role_id,
             permission_id=relation.permission_id,
         )
+    
+    async def delete_assigned_permission_role(self, data: PermissionRoleDeleteRequest) -> dict:
+        await RoleService(self.session).get_by_id(data.role_id)
+        await PermissionService(self.session).get_by_id(data.permission_id)
+
+        permission_role = await self.get_permission_role(
+            role_id=data.role_id,
+            permission_id=data.permission_id
+        )
+
+        if permission_role is None:
+            raise PermissionRoleNotFound()
+
+        await self.session.delete(permission_role)
+        await self.session.commit()
+
+        return {"detail": "Permission from role deleted successfully"}
     
     async def list_assigned_permissions_roles(
         self,

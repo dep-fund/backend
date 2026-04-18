@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.enums import UserType
+from app.models.user import User
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.role import RoleCreateRequest, RoleResponse
 from app.services.role_service import RoleService
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/admin/role", tags=["Administrators - Roles"])
 async def create(
     data: RoleCreateRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     return await RoleService(session).create(data)
 
@@ -26,6 +27,7 @@ async def list_roles(
     page: int = Query(1, gt=0),
     page_size: int = Query(10, gt=0, le=100),
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     total, items = await RoleService(session).list(
         page=page,
@@ -43,6 +45,7 @@ async def list_roles(
 async def delete(
     type: str,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
 ):
     return await RoleService(session).delete(type)
     
