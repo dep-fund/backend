@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.exceptions.permission import PermissionNotFound, PermissionRoleAlreadyAssigned
 from app.models.permission import Permission
 from app.models.permission_role import PermissionRole
-from app.schemas.permission import PermissionCreateRequest, PermissionResponse, PermissionRoleCreateRequest, PermissionRoleResponse
+from app.models.role import Role
+from app.schemas.permission import DetailPermissionRoleResponse, PermissionCreateRequest, PermissionResponse, PermissionRoleCreateRequest, PermissionRoleResponse
 from app.services.role_service import RoleService
 
 class PermissionService:
@@ -82,7 +83,7 @@ class PermissionService:
 
         return {"detail": "Permission deleted successfully"}
     
-    async def assign_to_role(self, data: PermissionRoleCreateRequest) -> PermissionRoleResponse:
+    async def assign_to_role(self, data: PermissionRoleCreateRequest) -> DetailPermissionRoleResponse:
         await RoleService(self.session).get_by_id(data.role_id)
         await PermissionService(self.session).get_by_id(data.permission_id)
         permission_role = await self.get_permission_role(role_id=data.role_id, permission_id=data.permission_id)
@@ -102,3 +103,36 @@ class PermissionService:
             role_id=relation.role_id,
             permission_id=relation.permission_id,
         )
+    
+    async def list_assigned_permissions_roles(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[int, List[PermissionRoleResponse]]:
+
+        query = (
+            select(
+                Role.type.label("role"),
+                Permission.type.label("permission"),
+            )
+            .select_from(PermissionRole)
+            .join(Role, Role.id == PermissionRole.role_id)
+            .join(Permission, Permission.id == PermissionRole.permission_id)
+        )
+
+        total = await self.session.scalar(
+            select(func.count()).select_from(query.subquery())
+        )
+        result = await self.session.execute(
+            query.offset((page - 1) * page_size).limit(page_size)
+        )
+        rows = result.all()
+        return total or 0, [
+            DetailPermissionRoleResponse(
+                role_id=row.role.id,
+                permission_id=row.permission.id,
+                role=row.role,
+                permission=row.permission,
+            )
+            for row in rows
+        ]

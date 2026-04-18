@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.permission import PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleResponse
+from app.schemas.permission import DetailPermissionRoleResponse, PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleResponse
 from app.core.dependencies.user_dependencies import get_current_admin_user
 from app.services.permission_service import PermissionService
 
@@ -51,3 +51,24 @@ async def assign_permission_to_role(
     session: AsyncSession = Depends(get_session),
 ):
     return await PermissionService(session).assign_to_role(data)
+
+@router.get(
+    "/role-permissions",
+    response_model=PaginatedResponse[DetailPermissionRoleResponse],
+)
+async def list_role_permissions(
+    page: int = Query(1, gt=0),
+    page_size: int = Query(10, gt=0, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    total, items = await PermissionService(session).list_assigned_permissions_roles(
+        page=page,
+        page_size=page_size,
+    )
+
+    return PaginatedResponse[DetailPermissionRoleResponse](
+        total=total,
+        page=page,
+        page_size=page_size,
+        results=items,
+    )

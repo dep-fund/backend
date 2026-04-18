@@ -41,7 +41,7 @@ async def list_roles(
 
 @router.delete("", response_model=dict)
 async def delete(
-    type: UserType,
+    type: str,
     session: AsyncSession = Depends(get_session),
 ):
     return await RoleService(session).delete(type)

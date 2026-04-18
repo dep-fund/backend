@@ -1,3 +1,4 @@
+from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
@@ -9,6 +10,7 @@ class RoleDeleteRequest(BaseModel):
 
 
 class RoleResponse(BaseModel):
+    id: UUID
     type: str
     
     model_config = ConfigDict(from_attributes=True)
