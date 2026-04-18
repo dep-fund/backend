@@ -16,6 +16,7 @@ from app.schemas.users.admin_user import (
     AdminUserResponse,
     AdminUserUpdateRequest,
 )
+from app.services.role_service import RoleService
 from app.services.users.user_service import UserService
 from app.exceptions.users.user_exceptions import (
     UsernameAlreadyTaken,
@@ -49,6 +50,7 @@ class AdminUserService:
         if await self._user_service.get_by_email(data.email):
             raise EmailAlreadyRegistered()
 
+        role = await RoleService(self.session).get_by_type(UserType.ADMIN)
         user = User(
             username=data.username,
             name=data.name,
@@ -57,6 +59,7 @@ class AdminUserService:
             password=hash_password(data.password),
             image=data.image,
             type=UserType.ADMIN,
+            role_id=role.id,
         )
 
         self.session.add(user)
@@ -103,3 +106,4 @@ class AdminUserService:
         await self.session.commit()
 
         return {"detail": "User deleted successfully"}
+    

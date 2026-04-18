@@ -23,7 +23,7 @@ class AuthService:
         allowed_type: Optional[UserType] = None
     ) -> TokenResponse:
 
-        user = await UserService(self.session).get_by_username(data.username)
+        user = await UserService(self.session).get_by_username_or_email(data.identifier)
 
         if not user or not verify_password(data.password, user.password):
             raise InvalidCredentials()

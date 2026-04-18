@@ -15,6 +15,7 @@ from app.schemas.users.standard_user import (
     StandardUserResponse,
     StandardUserUpdateRequest,
 )
+from app.services.role_service import RoleService
 from app.services.users.user_service import UserService
 
 from app.exceptions.users.user_exceptions import (
@@ -74,6 +75,7 @@ class StandardUserService:
         if await self._user_service.get_by_email(data.email):
             raise EmailAlreadyRegistered()
 
+        role = await RoleService(self.session).get_by_type(UserType.STANDARD)
         user = User(
             username=data.username,
             name=data.name,
@@ -83,6 +85,7 @@ class StandardUserService:
             password=hash_password(data.password),
             image=data.image,
             type=UserType.STANDARD,
+            role_id=role.id,
         )
 
         self.session.add(user)
@@ -122,8 +125,9 @@ class StandardUserService:
         user = await self._user_service.get_by_id(user_id)
         if not user:
             raise UserNotFound()
-        
-        await self.session.delete(user)
+        user.activated = False
+
+        self.session.add(user)
         await self.session.commit()
 
         return {"detail": "User deleted successfully"}

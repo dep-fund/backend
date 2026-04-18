@@ -1,11 +1,14 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 import uuid
 from sqlalchemy import Date, Enum as SAEnum, UUID, Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.core.enums import UserType
+
+if TYPE_CHECKING:
+    from app.models.role import Role
 
 
 class User(Base):
@@ -26,12 +29,18 @@ class User(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
     type: Mapped[UserType] = mapped_column(SAEnum(UserType, name="user_type"),nullable=False)
+    role_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ROLE.id"),
+        nullable=False
+    )
     standard: Mapped[Optional["StandardUser"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
     admin: Mapped[Optional["AdminUser"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    role: Mapped["Role"] = relationship("Role", back_populates="users")
 
 class StandardUser(Base):
     __tablename__ = "STANDARD_USER"
