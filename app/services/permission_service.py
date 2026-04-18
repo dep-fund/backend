@@ -1,16 +1,16 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
+from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enums import UserType
-from app.exceptions.permission import PermissionNotFound
+from app.exceptions.permission import PermissionNotFound, PermissionRoleAlreadyAssigned
 from app.models.permission import Permission
-from app.schemas.permission import PermissionCreateRequest, PermissionResponse
-from app.services.users.user_service import UserService
+from app.models.permission_role import PermissionRole
+from app.schemas.permission import PermissionCreateRequest, PermissionResponse, PermissionRoleCreateRequest, PermissionRoleResponse
+from app.services.role_service import RoleService
 
 class PermissionService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
-        self._user_service = UserService(session)
 
     async def create(self, data: PermissionCreateRequest) -> PermissionResponse:
         permission = Permission(
@@ -31,6 +31,24 @@ class PermissionService:
             raise PermissionNotFound()
         
         return permission
+
+    async def get_by_id(self, id: str) -> Permission:
+        permission = await self.session.scalar(
+            select(Permission).where(Permission.id == id)
+        )
+        if not permission:
+            raise PermissionNotFound()
+        
+        return permission
+    
+    async def get_permission_role(self, role_id: UUID, permission_id: UUID) -> Permission:
+        permission_role = await self.session.scalar(
+            select(PermissionRole).where(
+                PermissionRole.role_id == role_id,
+                PermissionRole.permission_id == permission_id
+            )
+        )
+        return permission_role
     
     async def list(
         self,
@@ -63,3 +81,24 @@ class PermissionService:
         await self.session.commit()
 
         return {"detail": "Permission deleted successfully"}
+    
+    async def assign_to_role(self, data: PermissionRoleCreateRequest) -> PermissionRoleResponse:
+        await RoleService(self.session).get_by_id(data.role_id)
+        await PermissionService(self.session).get_by_id(data.permission_id)
+        permission_role = await self.get_permission_role(role_id=data.role_id, permission_id=data.permission_id)
+        if permission_role is not None:
+            raise PermissionRoleAlreadyAssigned()
+        
+        relation = PermissionRole(
+            role_id=data.role_id,
+            permission_id=data.permission_id,
+        )
+
+        self.session.add(relation)
+        await self.session.commit()
+        await self.session.refresh(relation)
+
+        return PermissionRoleResponse(
+            role_id=relation.role_id,
+            permission_id=relation.permission_id,
+        )

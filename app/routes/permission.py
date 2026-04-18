@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.enums import UserType
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.permission import PermissionResponse, PermissionCreateRequest
+from app.schemas.permission import PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleResponse
 from app.core.dependencies.user_dependencies import get_current_admin_user
 from app.services.permission_service import PermissionService
 
@@ -45,3 +44,10 @@ async def delete(
     session: AsyncSession = Depends(get_session),
 ):
     return await PermissionService(session).delete(type)
+
+@router.post("/assign-to-role", response_model=PermissionRoleResponse)
+async def assign_permission_to_role(
+    data: PermissionRoleCreateRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    return await PermissionService(session).assign_to_role(data)
