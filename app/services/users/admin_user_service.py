@@ -24,6 +24,9 @@ from app.exceptions.users.user_exceptions import (
     UserNotFound,
     WrongCurrentPassword,
 )
+from app.schemas.users.standard_user import (
+    StandardUserResponse
+)
 
 
 class AdminUserService:
@@ -106,4 +109,15 @@ class AdminUserService:
         await self.session.commit()
 
         return {"detail": "User deleted successfully"}
+    
+    async def toggle_user_block(self, user_id: UUID) -> StandardUserResponse:
+        user = await self._user_service.get_by_id(user_id)
+        if not user:
+            raise UserNotFound()
+
+        user.blocked = not user.blocked
+        await self.session.commit()
+        await self.session.refresh(user)
+
+        return StandardUserResponse.model_validate(user)
     
