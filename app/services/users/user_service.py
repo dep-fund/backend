@@ -4,7 +4,13 @@ from uuid import UUID
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.auth import ResetPasswordRequest
 from app.models.user import User
+from app.core.security.hash_password import hash_password
+from app.core.security.verify_password import verify_password
+
+from app.exceptions.users.user_exceptions import UserNotFound
+from app.exceptions.auth.auth import InvalidCredentials
 
 
 class UserService:
@@ -29,3 +35,14 @@ class UserService:
                 )
             )
         )
+
+    async def reset_password(self, user_id: UUID, data: ResetPasswordRequest):
+        user = await self.get_by_id(user_id)
+        if not user:
+            raise UserNotFound()
+        if not verify_password(data.old_password, user.password):
+            raise InvalidCredentials()
+        
+        user.password = hash_password(data.new_password)
+        await self.session.commit()
+        await self.session.refresh(user)

@@ -20,6 +20,7 @@ class TokenService:
 
         return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
 
+
     def decode_token(self, token: str):
         try:
             return jwt.decode(
@@ -31,3 +32,7 @@ class TokenService:
             return None
         except InvalidTokenError:
             return None
+
+
+    def create_reset_token(self, data: dict):
+        return self.create_access_token(data, timedelta(minutes=15))
