@@ -17,12 +17,16 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", 5433))
     LOG_SQL_QUERIES: bool = os.getenv("LOG_SQL_QUERIES", "0") == "1"
 
-    # Estos se leen desde secrets, con fallback a env vars para desarrollo local
     POSTGRES_USER: str = _read_secret("postgres_user", os.getenv("POSTGRES_USER", "postgres"))
     POSTGRES_PASSWORD: str = _read_secret("postgres_password", os.getenv("POSTGRES_PASSWORD", "postgres"))
     POSTGRES_DB: str = _read_secret("postgres_db", os.getenv("POSTGRES_DB", "depfund"))
     SECRET_KEY: str = _read_secret("secret_key", os.getenv("SECRET_KEY", ""))
     ADMIN_SECRET_KEY: str = _read_secret("admin_secret_key", os.getenv("ADMIN_SECRET_KEY", "develop"))
+
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", 587))
+    SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "depfund.soporte@gmail.com")
+    SENDER_PASSWORD: str = _read_secret("sender_password", os.getenv("SENDER_PASSWORD", ""))
 
     @property
     def DATABASE_URL(self) -> str:

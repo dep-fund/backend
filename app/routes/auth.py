@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -25,9 +25,10 @@ async def login(
 @router.post("/forgot-password", response_model=MessageResponse)
 async def forgot_password(
     data: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
-    return await AuthService(session).forgot_password(data)
+    return await AuthService(session).forgot_password(data, background_tasks)
 
 
 @router.post("/reset-password", response_model=MessageResponse)

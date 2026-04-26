@@ -1,0 +1,70 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ "main", "develop", "feature/*" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: depfund_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio httpx
+        
+    - name: Run Migrations
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5433
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: depfund_test
+        SECRET_KEY: test_secret_key
+        ADMIN_SECRET_KEY: test_admin_key
+        SENDER_EMAIL: test@example.com
+        SENDER_PASSWORD: test
+      run: |
+        alembic upgrade head
+
+    - name: Run Tests
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5433
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: depfund_test
+        SECRET_KEY: test_secret_key
+        ADMIN_SECRET_KEY: test_admin_key
+        SENDER_EMAIL: test@example.com
+        SENDER_PASSWORD: test
+      run: |
+        pytest app/tests/ -v

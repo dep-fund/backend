@@ -11,6 +11,8 @@ secrets:
     file: ./secrets/secret_key.txt
   admin_secret_key:
     file: ./secrets/admin_secret_key.txt
+  sender_password:
+    file: ./secrets/sender_password.txt
 
 services:
   db:
@@ -47,6 +49,7 @@ services:
       - postgres_db
       - secret_key
       - admin_secret_key
+      - sender_password
     environment:
       IN_DOCKER: "1"
       POSTGRES_HOST: db

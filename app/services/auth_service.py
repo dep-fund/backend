@@ -1,4 +1,6 @@
 from typing import Optional
+from uuid import UUID
+from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import UserType
@@ -58,7 +60,8 @@ class AuthService:
 
     async def forgot_password(
         self, 
-        data: ForgotPasswordRequest
+        data: ForgotPasswordRequest,
+        background_tasks: BackgroundTasks
         ) -> MessageResponse:
         
         user = await UserService(self.session).get_by_email(data.email)
@@ -72,7 +75,11 @@ class AuthService:
                 }
             )
             
-            MailService().send_reset_password_email(user.email, token)
+            background_tasks.add_task(
+                MailService().send_reset_password_email,
+                user.email,
+                token
+            )
         
         return {"message": "Si el correo electrónico está registrado, recibirás un enlace para restablecer tu contraseña."}
 
@@ -86,11 +93,15 @@ class AuthService:
         if not payload or payload.get("token_kind") != "reset":
             raise PasswordResetTokenInvalid()
             
-        user = await UserService(self.session).get_by_id(payload.get("user_id"))
+        user_id_str = payload.get("user_id")
+        user = await UserService(self.session).get_by_id(UUID(user_id_str))
         
         if not user:
             raise PasswordResetTokenNotFound()
+            
+        if data.identifier not in [user.username, user.email]:
+            raise PasswordResetTokenInvalid()
 
-        await UserService(self.session).reset_password(user.id, data)
+        await UserService(self.session).reset_password(user.id, data.new_password)
         
         return {"message": "Contraseña actualizada correctamente."}

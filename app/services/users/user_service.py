@@ -36,13 +36,11 @@ class UserService:
             )
         )
 
-    async def reset_password(self, user_id: UUID, data: ResetPasswordRequest):
+    async def reset_password(self, user_id: UUID, new_password: str):
         user = await self.get_by_id(user_id)
         if not user:
             raise UserNotFound()
-        if not verify_password(data.old_password, user.password):
-            raise InvalidCredentials()
         
-        user.password = hash_password(data.new_password)
+        user.password = hash_password(new_password)
         await self.session.commit()
         await self.session.refresh(user)

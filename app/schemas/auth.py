@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 
 class LoginRequest(BaseModel):
@@ -29,5 +29,11 @@ class ResetPasswordRequest(BaseModel):
     @classmethod
     def password_min_length(cls, v: str) -> str:
         if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters")
+            raise ValueError("La contraseña debe tener al menos 8 caracteres")
         return v
+
+    @model_validator(mode='after')
+    def verify_passwords_match(self) -> 'ResetPasswordRequest':
+        if self.new_password != self.confirm_password:
+            raise ValueError("Las contraseñas no coinciden")
+        return self

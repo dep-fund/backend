@@ -3,7 +3,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.core.config import settings
 
-
 class MailService:
    
     def send_reset_password_email(
@@ -14,9 +13,8 @@ class MailService:
         message = MIMEMultipart()
         message["From"] = settings.SENDER_EMAIL
         message["To"] = email
-        message["Subject"] = "Recuperar contraseña - TuApp"
+        message["Subject"] = "Recuperar contraseña - DepFund"
 
-        # 2. Construimos el cuerpo del correo
         body_text = f"""
         <html>
           <body>
@@ -26,18 +24,19 @@ class MailService:
             <a href="http://localhost:8000/reset-password?token={token}">Restablecer Contraseña</a>
             <p>Este enlace expirará en 15 minutos.</p>
             <p>Si no solicitaste esto, ignora este correo.</p>
-            <p>Atentamente,<br>TuApp</p>
+            <p>Atentamente,<br>DepFund</p>
           </body>
         </html>
         """
         
         message.attach(MIMEText(body_text, "html"))
 
-        # 3. Enviamos el correo (Simulado)
         try:
-            print(f"[MOCK EMAIL] Enviando a {email}: {body_text}")
-            # Aquí iría tu código real de smtplib o Resend
+            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+            server.starttls()
+            server.login(settings.SENDER_EMAIL, settings.SENDER_PASSWORD)
+            server.send_message(message)
+            server.quit()
+            print(f"[EMAIL] Correo de recuperación enviado exitosamente a {email}")
         except Exception as e:
-            # Si falla al enviar, NO lanzamos error para no exponer el usuario
             print(f"[ERROR] No se pudo enviar el correo a {email}: {e}")
-        
