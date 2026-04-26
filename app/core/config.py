@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "depfund.soporte@gmail.com")
     SENDER_PASSWORD: str = _read_secret("sender_password", os.getenv("SENDER_PASSWORD", ""))
 
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
-    BACKOFFICE_URL: str = os.getenv("BACKOFFICE_URL", "http://localhost:5174")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://depfund.vercel.app")
+    BACKOFFICE_URL: str = os.getenv("BACKOFFICE_URL", "https://depfund-admin.vercel.app")
 
     @property
     def DATABASE_URL(self) -> str:
