@@ -4,9 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.models.user import User
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.permission import DetailPermissionRoleResponse, PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleDeleteRequest, PermissionRoleResponse
+from app.schemas.permission import DetailPermissionRoleResponse, PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleDeleteRequest, PermissionRoleResponse,PermissionUpdateRequest
 from app.core.dependencies.user_dependencies import get_current_admin_user
 from app.services.permission_service import PermissionService
+
+from uuid import UUID
+
 
 router = APIRouter(prefix="/admin/permission", tags=["Administrators - Permissions"])
 
@@ -86,3 +89,13 @@ async def list_role_permissions(
         page_size=page_size,
         results=items,
     )
+
+
+@router.patch("/{permission_id}", response_model=PermissionResponse)
+async def update_permission(
+    permission_id: UUID,
+    data: PermissionUpdateRequest,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
+):
+    return await PermissionService(session).update(permission_id, data)
