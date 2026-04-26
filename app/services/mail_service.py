@@ -3,6 +3,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.core.config import settings
 
+from app.exceptions.mail import MailServiceError
+
 class MailService:
    
     def send_reset_password_email(
@@ -44,6 +46,6 @@ class MailService:
             server.login(settings.SENDER_EMAIL, settings.SENDER_PASSWORD)
             server.send_message(message)
             server.quit()
-            print(f"[EMAIL] Correo de recuperación enviado exitosamente a {email}")
         except Exception as e:
-            print(f"[ERROR] No se pudo enviar el correo a {email}: {e}")
+            raise MailServiceError(f"Failed to send reset password email: {str(e)}")
+        
