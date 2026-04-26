@@ -7,6 +7,11 @@ from app.schemas.auth import LoginRequest, TokenResponse
 from app.services.jwt_token_service import TokenService
 from app.services.users.user_service import UserService
 
+from app.models.role import Role
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
+
+
 from app.exceptions.auth.auth import (
     InvalidCredentials,
     UserBlocked,
@@ -21,9 +26,12 @@ class AuthService:
         self,
         data: LoginRequest,
         allowed_type: Optional[UserType] = None
+
     ) -> TokenResponse:
 
-        user = await UserService(self.session).get_by_username_or_email(data.identifier)
+        user = await UserService(self.session).get_with_role_and_permissions(data.identifier)
+
+
 
         if not user or not user.password or not verify_password(data.password, user.password):
             raise InvalidCredentials()
@@ -36,12 +44,15 @@ class AuthService:
 
         if not user.activated:
             raise AccountNotActivated()
+        
 
+        permissions = [perm.type for perm in user.role.permissions]
         token = TokenService().create_access_token({
             "sub": user.username,
             "user_id": str(user.id),
             "type": user.type.value,
             "token_kind": "user",
+            "permissions": permissions
         })
 
         return TokenResponse(access_token=token)

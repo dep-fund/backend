@@ -5,6 +5,9 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
+from sqlalchemy.orm import joinedload
+from app.models.role import Role
+
 
 
 class UserService:
@@ -29,3 +32,13 @@ class UserService:
                 )
             )
         )
+    
+    async def get_with_role_and_permissions(self, identifier: str):
+     result = await self.session.execute(
+        select(User).options(
+            joinedload(User.role).joinedload(Role.permissions)
+        ).where(
+            (User.username == identifier) | (User.email == identifier)
+        )
+    )
+     return result.unique().scalar_one_or_none()
