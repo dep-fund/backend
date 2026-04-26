@@ -52,8 +52,12 @@ services:
       - sender_password
     environment:
       IN_DOCKER: "1"
+      PYTHONUNBUFFERED: "1"
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      SENDER_EMAIL: depfund.soporte@gmail.com
+      FRONTEND_URL: "http://localhost:5173"
+      BACKOFFICE_URL: "http://localhost:5174"
     depends_on:
       db:
         condition: service_healthy

@@ -78,7 +78,8 @@ class AuthService:
             background_tasks.add_task(
                 MailService().send_reset_password_email,
                 user.email,
-                token
+                token,
+                user.type.value
             )
         
         return {"message": "Si el correo electrónico está registrado, recibirás un enlace para restablecer tu contraseña."}
