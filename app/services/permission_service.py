@@ -172,13 +172,18 @@ class PermissionService:
             if not permission:
                 raise PermissionNotFound()
 
+    
+
             exists = await self.session.execute(
-                select(Permission).where(Permission.type == data.type)
+                select(Permission).where(
+                    func.lower(Permission.type) == func.lower(data.type),
+                    Permission.id != permission_id
+                )
             )
 
             existing_permission = exists.scalar_one_or_none()
 
-            if existing_permission and existing_permission.id != permission_id:
+            if existing_permission:
                 raise PermissionAlreadyExists()
 
             permission.type = data.type
