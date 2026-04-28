@@ -95,13 +95,14 @@ class AuthService:
             raise PasswordResetTokenInvalid()
             
         user_id_str = payload.get("user_id")
-        user = await UserService(self.session).get_by_id(UUID(user_id_str))
+        
+        try:
+            user = await UserService(self.session).get_by_id(UUID(user_id_str))
+        except Exception:
+            raise PasswordResetTokenInvalid()
         
         if not user:
             raise PasswordResetTokenNotFound()
-            
-        if data.identifier not in [user.username, user.email]:
-            raise PasswordResetTokenInvalid()
 
         await UserService(self.session).reset_password(user.id, data.new_password)
         
