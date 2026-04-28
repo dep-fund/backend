@@ -5,7 +5,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 from app.models.role import Role
 
 
@@ -34,11 +34,17 @@ class UserService:
         )
     
     async def get_with_role_and_permissions(self, identifier: str):
-     result = await self.session.execute(
-        select(User).options(
-            joinedload(User.role).joinedload(Role.permissions)
-        ).where(
-            (User.username == identifier) | (User.email == identifier)
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.role),
+                selectinload(User.role).selectinload(Role.permissions)
+            )
+            .where(
+                (User.username == identifier) |
+                (User.email == identifier)
+            )
         )
-    )
-     return result.unique().scalar_one_or_none()
+
+        result = await self.session.execute(stmt)
+        return result.scalars().first()

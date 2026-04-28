@@ -16,7 +16,7 @@ class PermissionRoleNotFound(ExceptionHandler):
     message = "Permission role not found."
     blocker = True
 
-class PermissionAlreadyExists(Exception):
+class PermissionAlreadyExists(ExceptionHandler):
     code = status.HTTP_409_CONFLICT
     message = "Permission already exists."
     blocker = True

@@ -6,7 +6,7 @@ from app.core.security.verify_password import verify_password
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.services.jwt_token_service import TokenService
 from app.services.users.user_service import UserService
-
+from sqlalchemy import inspect, select
 from app.models.role import Role
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -30,7 +30,7 @@ class AuthService:
     ) -> TokenResponse:
 
         user = await UserService(self.session).get_with_role_and_permissions(data.identifier)
-
+        
 
 
         if not user or not user.password or not verify_password(data.password, user.password):
@@ -47,6 +47,12 @@ class AuthService:
         
 
         permissions = [perm.type for perm in user.role.permissions]
+
+
+
+        for p in user.role.permissions:
+            print("PERM:", p.type)
+
         token = TokenService().create_access_token({
             "sub": user.username,
             "user_id": str(user.id),
@@ -54,5 +60,5 @@ class AuthService:
             "token_kind": "user",
             "permissions": permissions
         })
-
+        
         return TokenResponse(access_token=token)

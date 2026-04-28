@@ -24,3 +24,8 @@ class InvalidUserType(ExceptionHandler):
     code = status.HTTP_401_UNAUTHORIZED
     message = "Invalid credentials."
     blocker = True
+
+class PermissionDenied(ExceptionHandler):
+    code = status.HTTP_403_FORBIDDEN
+    message = "No tenés permiso."
+    blocker = True
