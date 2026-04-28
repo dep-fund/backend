@@ -33,7 +33,7 @@ class UserService:
             )
         )
     
-    async def get_with_role_and_permissions(self, identifier: str):
+    async def get_with_role_and_permissions(self, identifier: str) -> Optional[User] :
         stmt = (
             select(User)
             .options(

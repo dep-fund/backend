@@ -101,10 +101,35 @@ def require_permission(permission: str):
 
         
         user_permissions = [
-            p.strip().lower() for p in payload.get("permissions", [])
+            p.strip().upper() for p in payload.get("permissions", [])
         ]
 
-        if permission.lower() not in user_permissions:
+        if permission.upper() not in user_permissions:
+            raise PermissionDenied()
+
+        return current_user
+
+    return dependency
+
+
+def require_permission_admin(permission: str):
+    async def dependency(
+        current_user: User = Depends(get_current_admin_user),
+        credentials: HTTPAuthorizationCredentials = Security(bearer),
+    ) -> User:
+
+        token = _extract_token(credentials)
+
+        payload = TokenService().decode_token(token)  
+
+
+        
+        user_permissions = [
+            p.strip().upper() for p in payload.get("permissions", [])
+        ]
+
+
+        if permission.upper() not in user_permissions:
             raise PermissionDenied()
 
         return current_user

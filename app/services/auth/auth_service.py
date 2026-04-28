@@ -49,10 +49,6 @@ class AuthService:
         permissions = [perm.type for perm in user.role.permissions]
 
 
-
-        for p in user.role.permissions:
-            print("PERM:", p.type)
-
         token = TokenService().create_access_token({
             "sub": user.username,
             "user_id": str(user.id),

@@ -5,7 +5,7 @@ from app.core.database import get_session
 from app.models.user import User
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.permission import DetailPermissionRoleResponse, PermissionResponse, PermissionCreateRequest, PermissionRoleCreateRequest, PermissionRoleDeleteRequest, PermissionRoleResponse,PermissionUpdateRequest
-from app.core.dependencies.user_dependencies import get_current_admin_user,require_permission
+from app.core.dependencies.user_dependencies import get_current_admin_user,require_permission_admin
 from app.services.permission_service import PermissionService
 
 from uuid import UUID
@@ -96,6 +96,6 @@ async def update_permission(
     permission_id: UUID,
     data: PermissionUpdateRequest,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_permission("permission:edit")),
+    current_user: User = Depends(require_permission_admin("PERMISSION:EDIT")),
 ):
     return await PermissionService(session).update(permission_id, data)
