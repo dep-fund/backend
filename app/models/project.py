@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 
 import enum
 from app.core.database import Base 
-from uuid import UUID as PythonUUID # Renombrar para evitar conflicto con sqlalchemy.UUID
+
 
 
 class ProjectState(str, enum.Enum):
