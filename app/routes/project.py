@@ -1,6 +1,6 @@
 # from fastapi import APIRouter, Depends, HTTPException, status
 # from sqlalchemy.orm import Session
-# from app.core.database import get_db # Ajustar según donde tengan el generador de sesión
+# from app.core.database import get_db 
 # from app.models.project import Project
 # from app.schemas.project import ProjectCreate, ProjectResponse
 # from app.core.database import get_session as get_db
@@ -20,7 +20,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_session  # <--- Cambiamos get_db por get_session
+from app.core.database import get_session  
 from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectResponse
 
