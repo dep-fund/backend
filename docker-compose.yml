@@ -57,7 +57,7 @@ services:
       POSTGRES_PORT: 5432
       SENDER_EMAIL: depfund.soporte@gmail.com
       FRONTEND_URL: "http://localhost:5173"
-      BACKOFFICE_URL: "http://localhost:5174"
+      BACKOFFICE_URL: "http://localhost:5173"
     depends_on:
       db:
         condition: service_healthy
