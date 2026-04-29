@@ -31,3 +31,7 @@ class DetailPermissionRoleResponse(BaseModel):
     permission_id: UUID
     role: str
     permission: str
+
+
+class PermissionUpdateRequest(BaseModel):
+    type: str

@@ -25,6 +25,12 @@ class InvalidUserType(ExceptionHandler):
     message = "Invalid credentials."
     blocker = True
 
+class PermissionDenied(ExceptionHandler):
+    code = status.HTTP_403_FORBIDDEN
+    message = "No tenés permiso."
+    blocker = True
+
+
 
 class PasswordResetTokenExpired(ExceptionHandler):
     code = status.HTTP_400_BAD_REQUEST

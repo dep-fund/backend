@@ -11,6 +11,12 @@ secrets:
     file: ./secrets/secret_key.txt
   admin_secret_key:
     file: ./secrets/admin_secret_key.txt
+  google_client_id:
+    file: ./secrets/google_client_id.txt
+  google_client_secret:
+    file: ./secrets/google_client_secret.txt
+  google_redirect_uri:
+    file: ./secrets/google_redirect_uri.txt
   sender_password:
     file: ./secrets/sender_password.txt
 
@@ -49,6 +55,9 @@ services:
       - postgres_db
       - secret_key
       - admin_secret_key
+      - google_client_id
+      - google_client_secret
+      - google_redirect_uri
       - sender_password
     environment:
       IN_DOCKER: "1"

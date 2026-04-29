@@ -2,11 +2,11 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.exceptions.permission import PermissionNotFound, PermissionRoleAlreadyAssigned, PermissionRoleNotFound
+from app.exceptions.permission import PermissionNotFound, PermissionRoleAlreadyAssigned, PermissionRoleNotFound, PermissionAlreadyExists
 from app.models.permission import Permission
 from app.models.permission_role import PermissionRole
 from app.models.role import Role
-from app.schemas.permission import DetailPermissionRoleResponse, PermissionCreateRequest, PermissionResponse, PermissionRoleCreateRequest, PermissionRoleDeleteRequest, PermissionRoleResponse
+from app.schemas.permission import DetailPermissionRoleResponse, PermissionCreateRequest, PermissionResponse, PermissionRoleCreateRequest, PermissionRoleDeleteRequest, PermissionRoleResponse,PermissionUpdateRequest
 from app.services.role_service import RoleService
 
 class PermissionService:
@@ -159,3 +159,36 @@ class PermissionService:
             )
             for row in rows
         ]
+    
+
+    async def update(self, permission_id, data: PermissionUpdateRequest):
+
+            result = await self.session.execute(
+                select(Permission).where(Permission.id == permission_id)
+            )
+
+            permission = result.scalar_one_or_none()
+
+            if not permission:
+                raise PermissionNotFound()
+
+    
+
+            exists = await self.session.execute(
+                select(Permission).where(
+                    func.lower(Permission.type) == func.lower(data.type),
+                    Permission.id != permission_id
+                )
+            )
+
+            existing_permission = exists.scalar_one_or_none()
+
+            if existing_permission:
+                raise PermissionAlreadyExists()
+
+            permission.type = data.type
+
+            await self.session.commit()
+            await self.session.refresh(permission)
+
+            return PermissionResponse.model_validate(permission)

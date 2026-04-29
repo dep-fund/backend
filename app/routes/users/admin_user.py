@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from uuid import UUID
+
 from app.core.database import get_session
 from app.core.dependencies.user_dependencies import get_current_admin_user
 from app.models.user import User
@@ -77,3 +79,14 @@ async def list_users(
         page_size=page_size,
         results=items,
     )
+
+@router.patch(
+    "/users/{user_id}/block",
+    response_model=StandardUserResponse,
+)
+async def toggle_user_block(
+    user_id: UUID,
+    current_user: User = Depends(get_current_admin_user),
+    session: AsyncSession = Depends(get_session),
+):
+    return await AdminUserService(session).toggle_user_block(user_id)
