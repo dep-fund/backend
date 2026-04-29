@@ -1,27 +1,46 @@
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Text, Enum, Integer, UUID
-from sqlalchemy.orm import relationship
+from datetime import datetime
+from decimal import Decimal
+from typing import TYPE_CHECKING
+from sqlalchemy import Numeric, String, DateTime, ForeignKey, Text, Enum as SAEnum, UUID
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
-
-import enum
 from app.core.database import Base 
+import uuid
 
+from app.core.enums import ProjectState
+from app.models.category_project import CategoryProject
 
-
-class ProjectState(str, enum.Enum):
-    PENDING = "PENDIENTE"
-    APROBADO = "APROBADO"
-    CANCELED = "CANCELADO"
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.category import Category
+    
 
 class Project(Base):
-    __tablename__ = "project"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text, nullable=False)
-    total_amount = Column(Float, nullable=False)
-    state = Column(Enum(ProjectState), server_default=ProjectState.PENDING)
-    ubication = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __tablename__ = "PROJECT"
     
-    # Relación con el Usuario:
-    user_id = Column(UUID(as_uuid=True), ForeignKey("USER.id"), nullable=False)
-    user = relationship("User", back_populates="project")
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    state: Mapped[ProjectState] = mapped_column(
+        SAEnum(ProjectState, name="project_state"), nullable=False, default=ProjectState.PENDING
+    )
+    ubication: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("USER.id"),
+        nullable=False
+    )
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="projects"
+    )
+    categories: Mapped[list["Category"]] = relationship(
+        "Category",
+        secondary=CategoryProject.__table__,
+        back_populates="projects"
+    )

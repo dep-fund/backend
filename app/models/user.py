@@ -7,9 +7,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.core.enums import AuthProvider, UserType
 
-from app.models.project import Project
 if TYPE_CHECKING:
     from app.models.role import Role
+    from app.models.project import Project
 
 
 class User(Base):

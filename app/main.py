@@ -8,7 +8,10 @@ from app.routes.users.admin_auth import router as admin_auth_router
 from app.routes.users.admin_user import router as admin_router
 from app.routes.role import router as admin_role
 from app.routes.permission import router as admin_permission
-from app.routes.project import router as admin_proyect
+from app.routes.projects.standard_user_project import router as standard_user_project_router
+from app.routes.projects.admin_projects import router as admin_project_router
+from app.routes.category.admin_category import router as admin_category_router
+from app.routes.category.standard_user_category import router as standard_user_category_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -26,12 +29,18 @@ app.add_middleware(
 
 setup_exception_handlers(app)
 
+# standard
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(oauth_router)
 app.include_router(users_router)
+app.include_router(standard_user_project_router)
+app.include_router(standard_user_category_router)
+
+# admin
 app.include_router(admin_auth_router)
 app.include_router(admin_router)
 app.include_router(admin_role)
 app.include_router(admin_permission)
-app.include_router(admin_proyect)
+app.include_router(admin_project_router)
+app.include_router(admin_category_router)
