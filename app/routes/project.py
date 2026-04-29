@@ -27,7 +27,7 @@ from app.schemas.project import ProjectCreate, ProjectResponse
 router = APIRouter(prefix="/project", tags=["Project"])
 
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-async def create_project(project_in: ProjectCreate, db: AsyncSession = Depends(get_session)): # <--- Usamos get_session acá también
+async def create_project(project_in: ProjectCreate, db: AsyncSession = Depends(get_session)): 
     new_project = Project(**project_in.model_dump())
     db.add(new_project)
     await db.commit()
