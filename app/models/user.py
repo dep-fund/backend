@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.core.enums import AuthProvider, UserType
 
+from app.models.project import Project
 if TYPE_CHECKING:
     from app.models.role import Role
 
@@ -45,6 +46,7 @@ class User(Base):
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
     role: Mapped["Role"] = relationship("Role", back_populates="users")
+    projects: Mapped[list["Project"]] = relationship("Project", back_populates="user")
 
 class StandardUser(Base):
     __tablename__ = "STANDARD_USER"
