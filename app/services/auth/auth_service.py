@@ -25,7 +25,7 @@ class AuthService:
 
         user = await UserService(self.session).get_by_username_or_email(data.identifier)
 
-        if not user or not verify_password(data.password, user.password):
+        if not user or not user.password or not verify_password(data.password, user.password):
             raise InvalidCredentials()
 
         if allowed_type is not None and user.type != allowed_type:
