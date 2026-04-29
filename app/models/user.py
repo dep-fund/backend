@@ -5,7 +5,7 @@ from sqlalchemy import Date, Enum as SAEnum, UUID, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.core.enums import UserType
+from app.core.enums import AuthProvider, UserType
 
 if TYPE_CHECKING:
     from app.models.role import Role
@@ -20,10 +20,14 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(String(100))
     birthdate: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     email: Mapped[str] = mapped_column(String(100), unique=True)
-    password: Mapped[str] = mapped_column(String(100))
+    password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     image: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     activated: Mapped[bool] = mapped_column(Boolean, default=True)
     blocked: Mapped[bool] = mapped_column(Boolean, default=False)
+    google_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
+    auth_provider: Mapped[AuthProvider] = mapped_column(
+        SAEnum(AuthProvider, name="auth_provider_type"), default=AuthProvider.LOCAL
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
