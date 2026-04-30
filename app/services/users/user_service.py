@@ -4,10 +4,16 @@ from uuid import UUID
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.auth import ResetPasswordRequest
 from app.models.user import User
 from sqlalchemy.orm import selectinload
 from app.models.role import Role
 
+from app.core.security.hash_password import hash_password
+from app.core.security.verify_password import verify_password
+
+from app.exceptions.users.user_exceptions import UserNotFound
+from app.exceptions.auth.auth import InvalidCredentials
 
 
 class UserService:
@@ -48,3 +54,12 @@ class UserService:
 
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    async def reset_password(self, user_id: UUID, new_password: str):
+        user = await self.get_by_id(user_id)
+        if not user:
+            raise UserNotFound()
+        
+        user.password = hash_password(new_password)
+        await self.session.commit()
+        await self.session.refresh(user)

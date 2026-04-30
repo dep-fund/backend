@@ -17,6 +17,8 @@ secrets:
     file: ./secrets/google_client_secret.txt
   google_redirect_uri:
     file: ./secrets/google_redirect_uri.txt
+  sender_password:
+    file: ./secrets/sender_password.txt
 
 services:
   db:
@@ -56,10 +58,15 @@ services:
       - google_client_id
       - google_client_secret
       - google_redirect_uri
+      - sender_password
     environment:
       IN_DOCKER: "1"
+      PYTHONUNBUFFERED: "1"
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      SENDER_EMAIL: depfund.soporte@gmail.com
+      FRONTEND_URL: "http://localhost:5173"
+      BACKOFFICE_URL: "http://localhost:5173"
     depends_on:
       db:
         condition: service_healthy

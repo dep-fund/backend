@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     GOOGLE_USERINFO_URL: str = "https://www.googleapis.com/oauth2/v3/userinfo"
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-    # Estos se leen desde secrets, con fallback a env vars para desarrollo local
     POSTGRES_USER: str = _read_secret("postgres_user", os.getenv("POSTGRES_USER", "postgres"))
     POSTGRES_PASSWORD: str = _read_secret("postgres_password", os.getenv("POSTGRES_PASSWORD", "postgres"))
     POSTGRES_DB: str = _read_secret("postgres_db", os.getenv("POSTGRES_DB", "depfund"))
@@ -30,6 +29,14 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = _read_secret("google_client_id", os.getenv("GOOGLE_CLIENT_ID", "develop"))
     GOOGLE_CLIENT_SECRET: str = _read_secret("google_client_secret", os.getenv("GOOGLE_CLIENT_SECRET", "develop"))
     GOOGLE_REDIRECT_URI: str = _read_secret("google_redirect_uri", os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback"))
+
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", 587))
+    SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "depfund.soporte@gmail.com")
+    SENDER_PASSWORD: str = _read_secret("sender_password", os.getenv("SENDER_PASSWORD", ""))
+
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://depfund.vercel.app")
+    BACKOFFICE_URL: str = os.getenv("BACKOFFICE_URL", "https://depfund-admin.vercel.app")
 
     @property
     def DATABASE_URL(self) -> str:
