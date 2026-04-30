@@ -2,7 +2,6 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enums import UserType
 from app.exceptions.role import RoleNotFound, RoleWithAssignedUsers
 from app.models.role import Role
 from app.schemas.role import RoleCreateRequest, RoleResponse
