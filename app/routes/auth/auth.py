@@ -9,8 +9,7 @@ from app.schemas.auth import (
     ResetPasswordRequest, 
     MessageResponse
 )
-from app.services.auth_service import AuthService
-from app.schemas.auth import LoginRequest, TokenResponse
+
 from app.services.auth.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
