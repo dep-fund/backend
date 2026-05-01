@@ -13,3 +13,4 @@ class ProjectState(str, Enum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     CANCELED = "CANCELED"
+    REJECTED = "REJECTED"

@@ -26,6 +26,10 @@ class ProjectUpdateRequest(BaseModel):
     category_ids: Optional[List[UUID]] = None
 
 
+class ProjectRejectRequest(BaseModel):
+    reason: str
+
+
 class ProjectResponse(BaseModel):
     id: UUID
     name: str

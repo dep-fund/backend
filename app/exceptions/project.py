@@ -10,4 +10,14 @@ class UnauthorizedProjectAccess(ExceptionHandler):
     code = status.HTTP_401_UNAUTHORIZED
     message = "Unauthorized access project."
     blocker = True
+
+class ProjectNotPending(ExceptionHandler):
+    code = status.HTTP_400_BAD_REQUEST
+    message = "Project must be in pending state to be evaluated."
+    blocker = True
+
+class MissingMandatoryProjectInfo(ExceptionHandler):
+    code = status.HTTP_400_BAD_REQUEST
+    message = "Project is missing mandatory information to be approved."
+    blocker = True
     
