@@ -19,7 +19,6 @@ class Settings(BaseSettings):
     GOOGLE_AUTH_URL: str = "https://accounts.google.com/o/oauth2/v2/auth"
     GOOGLE_TOKEN_URL: str = "https://oauth2.googleapis.com/token"
     GOOGLE_USERINFO_URL: str = "https://www.googleapis.com/oauth2/v3/userinfo"
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
     POSTGRES_USER: str = _read_secret("postgres_user", os.getenv("POSTGRES_USER", "postgres"))
     POSTGRES_PASSWORD: str = _read_secret("postgres_password", os.getenv("POSTGRES_PASSWORD", "postgres"))
