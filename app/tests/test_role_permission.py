@@ -27,21 +27,7 @@ from app.exceptions.permission import (
     PermissionAlreadyExists,
 )
 
-@pytest.fixture
-def mock_session():
-    session = MagicMock()
-    session.scalar = AsyncMock()
-    session.scalars = AsyncMock()
-    session.execute = AsyncMock()
-    session.commit = AsyncMock()
-    
-    async def side_effect_refresh(obj, attribute_names=None):
-        if hasattr(obj, "id") and obj.id is None:
-            obj.id = uuid4()
-    
-    session.refresh = AsyncMock(side_effect=side_effect_refresh)
-    session.delete = AsyncMock()
-    return session
+
 
 # --- RoleService Tests ---
 

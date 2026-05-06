@@ -15,13 +15,6 @@ from app.models.project import Project
 
 from app.models.category import Category
 
-@pytest.fixture
-def mock_session():
-    session = MagicMock()
-    session.scalar = AsyncMock()
-    session.scalars = AsyncMock()
-    session.commit = AsyncMock()
-    return session
 
 def create_valid_project():
     project = Project(
@@ -40,8 +33,8 @@ def create_valid_project():
     project.user.email = "owner@example.com"
     return project
 
-@pytest.mark.asyncio
 @patch("app.services.project_service.MailService")
+@pytest.mark.asyncio
 async def test_evaluate_approve_success(MockMailService, mock_session):
     # Setup
     project = create_valid_project()
@@ -68,8 +61,8 @@ async def test_evaluate_approve_success(MockMailService, mock_session):
     mock_session.commit.assert_called_once()
     MockMailService.return_value.send_project_status_email.assert_called_once()
 
-@pytest.mark.asyncio
 @patch("app.services.project_service.MailService")
+@pytest.mark.asyncio
 async def test_evaluate_reject_success(MockMailService, mock_session):
     # Setup
     project = create_valid_project()

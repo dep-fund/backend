@@ -23,40 +23,13 @@ from app.core.enums import UserType
 
 from datetime import datetime
 
-@pytest.fixture
-def mock_session():
-    session = MagicMock()
-    session.scalar = AsyncMock()
-    session.scalars = AsyncMock()
-    session.execute = AsyncMock()
-    session.commit = AsyncMock()
-    session.flush = AsyncMock()
-    
-    async def side_effect_refresh(obj, attribute_names=None):
-        if hasattr(obj, "id") and obj.id is None:
-            obj.id = uuid4()
-        if hasattr(obj, "activated") and obj.activated is None:
-            obj.activated = True
-        if hasattr(obj, "blocked") and obj.blocked is None:
-            obj.blocked = False
-        if hasattr(obj, "created_at") and obj.created_at is None:
-            obj.created_at = datetime.now()
-        if hasattr(obj, "updated_at") and obj.updated_at is None:
-            obj.updated_at = datetime.now()
-    
-    session.refresh = AsyncMock(side_effect=side_effect_refresh)
-    return session
-
-@pytest.fixture
-def background_tasks():
-    return MagicMock(spec=BackgroundTasks)
 
 # --- Login Tests ---
 
-@pytest.mark.asyncio
 @patch("app.services.auth.auth_service.UserService")
 @patch("app.services.auth.auth_service.verify_password")
 @patch("app.services.auth.auth_service.TokenService")
+@pytest.mark.asyncio
 async def test_login_success(MockTokenService, MockVerifyPassword, MockUserService, mock_session):
     # Setup
     mock_user = MagicMock()
@@ -84,9 +57,9 @@ async def test_login_success(MockTokenService, MockVerifyPassword, MockUserServi
     assert response.access_token == "access_token"
     MockVerifyPassword.assert_called_once_with("password123", "hashed_password")
 
-@pytest.mark.asyncio
 @patch("app.services.auth.auth_service.UserService")
 @patch("app.services.auth.auth_service.verify_password")
+@pytest.mark.asyncio
 async def test_login_invalid_credentials(MockVerifyPassword, MockUserService, mock_session):
     # Setup
     mock_user_service_instance = MockUserService.return_value
@@ -101,9 +74,9 @@ async def test_login_invalid_credentials(MockVerifyPassword, MockUserService, mo
 
 # --- Registration Tests ---
 
-@pytest.mark.asyncio
 @patch("app.services.users.standard_user_service.UserService")
 @patch("app.services.users.standard_user_service.RoleService")
+@pytest.mark.asyncio
 async def test_register_success(MockRoleService, MockUserService, mock_session):
     # Setup
     mock_user_service_instance = MockUserService.return_value
@@ -133,8 +106,8 @@ async def test_register_success(MockRoleService, MockUserService, mock_session):
     assert mock_session.commit.called
     mock_session.add.assert_called()
 
-@pytest.mark.asyncio
 @patch("app.services.users.standard_user_service.UserService")
+@pytest.mark.asyncio
 async def test_register_username_taken(MockUserService, mock_session):
     # Setup
     mock_user_service_instance = MockUserService.return_value
@@ -156,10 +129,10 @@ async def test_register_username_taken(MockUserService, mock_session):
 
 # --- Forgot/Reset Password Tests (Existing) ---
 
-@pytest.mark.asyncio
 @patch("app.services.auth.auth_service.UserService")
 @patch("app.services.auth.auth_service.TokenService")
 @patch("app.services.auth.auth_service.MailService")
+@pytest.mark.asyncio
 async def test_forgot_password_user_exists(MockMailService, MockTokenService, MockUserService, mock_session, background_tasks):
     mock_user = MagicMock()
     mock_user.id = uuid4()
@@ -184,9 +157,9 @@ async def test_forgot_password_user_exists(MockMailService, MockTokenService, Mo
     mock_token_service_instance.create_reset_token.assert_called_once()
     background_tasks.add_task.assert_called_once()
     
-@pytest.mark.asyncio
 @patch("app.services.auth.auth_service.UserService")
 @patch("app.services.auth.auth_service.TokenService")
+@pytest.mark.asyncio
 async def test_reset_password_success(MockTokenService, MockUserService, mock_session):
     # Setup user
     mock_user = MagicMock()
@@ -218,8 +191,8 @@ async def test_reset_password_success(MockTokenService, MockUserService, mock_se
     assert response["message"] == "Contraseña actualizada correctamente."
     mock_user_service_instance.reset_password.assert_called_once()
 
-@pytest.mark.asyncio
 @patch("app.services.auth.auth_service.TokenService")
+@pytest.mark.asyncio
 async def test_reset_password_invalid_token(MockTokenService, mock_session):
     mock_token_service_instance = MockTokenService.return_value
     mock_token_service_instance.decode_token.return_value = None # Invalid token
