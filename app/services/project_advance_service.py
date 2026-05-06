@@ -50,9 +50,8 @@ class ProjectAdvanceService:
             raise AdvanceNotFound()
         return adv
     
-    async def list_by_project(self, project_id: UUID, user_id: UUID) -> list[ProjectAdvanceResponse]:
-        await self._validate_project_owner(project_id, user_id)
-
+    async def list_by_project(self, project_id: UUID) -> list[ProjectAdvanceResponse]:
+        await self._project_service._get_project(project_id)
         result = await self.session.scalars(
             select(ProjectAdvance).where(ProjectAdvance.project_id == project_id).order_by(ProjectAdvance.number)
         )
@@ -66,8 +65,8 @@ class ProjectAdvanceService:
         )
         return [ProjectAdvanceResponse.model_validate(adv) for adv in result.all()]
     
-    async def get_by_project_and_number(self, project_id: UUID, number: int, user_id: UUID) -> ProjectAdvanceResponse:
-        await self._validate_project_owner(project_id, user_id)
+    async def get_by_project_and_number(self, project_id: UUID, number: int,) -> ProjectAdvanceResponse:
+        await self._project_service._get_project(project_id)
         adv = await self._get_advance(project_id, number)
         return ProjectAdvanceResponse.model_validate(adv)
     

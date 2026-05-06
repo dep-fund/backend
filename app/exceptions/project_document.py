@@ -11,3 +11,8 @@ class UnauthorizedDocumentAccess(ExceptionHandler):
     message = "Unauthorized access document."
     blocker = True
     
+class DocumentNotDeleted(ExceptionHandler):
+    code = status.HTTP_409_CONFLICT
+    message = "The project status is approved; it is not possible to delete the documentation."
+    blocker = True
+    

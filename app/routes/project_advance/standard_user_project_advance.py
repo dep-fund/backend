@@ -25,7 +25,7 @@ async def list_advances(
     current_user: User = Depends(get_current_standard_user),
     session: AsyncSession = Depends(get_session),
 ):
-    return await ProjectAdvanceService(session).list_by_project(project_id, current_user.id)
+    return await ProjectAdvanceService(session).list_by_project(project_id)
 
 @router.get("/{project_id}/advances/{number}", response_model=ProjectAdvanceResponse)
 async def get_advance(
@@ -34,7 +34,7 @@ async def get_advance(
     current_user: User = Depends(get_current_standard_user),
     session: AsyncSession = Depends(get_session),
 ):
-    return await ProjectAdvanceService(session).get_by_project_and_number(project_id, number, current_user.id)
+    return await ProjectAdvanceService(session).get_by_project_and_number(project_id, number)
 
 @router.delete("/{project_id}/advances/{number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_advance(

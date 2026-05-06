@@ -12,6 +12,10 @@ from app.routes.projects.standard_user_project import router as standard_user_pr
 from app.routes.projects.admin_projects import router as admin_project_router
 from app.routes.category.admin_category import router as admin_category_router
 from app.routes.category.standard_user_category import router as standard_user_category_router
+from app.routes.project_advance.admin_project_advance import router as admin_project_advance
+from app.routes.project_advance.standard_user_project_advance import router as standard_project_advance
+from app.routes.project_document.admin_project_document import router as admin_project_document
+from app.routes.project_document.standard_user_project_document import router as standard_project_document
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -36,6 +40,8 @@ app.include_router(oauth_router)
 app.include_router(users_router)
 app.include_router(standard_user_project_router)
 app.include_router(standard_user_category_router)
+app.include_router(standard_project_advance)
+app.include_router(standard_project_document)
 
 # admin
 app.include_router(admin_auth_router)
@@ -44,3 +50,5 @@ app.include_router(admin_role)
 app.include_router(admin_permission)
 app.include_router(admin_project_router)
 app.include_router(admin_category_router)
+app.include_router(admin_project_advance)
+app.include_router(admin_project_document)

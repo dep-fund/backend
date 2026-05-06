@@ -1,10 +1,11 @@
 from uuid import UUID
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.enums import ProjectState
 from app.models.project_document import ProjectDocument
 from app.schemas.project_document import ProjectDocumentCreate, ProjectDocumentResponse
 from app.services.project_service import ProjectService
-from app.exceptions.project_document import DocumentNotFound, UnauthorizedDocumentAccess
+from app.exceptions.project_document import DocumentNotFound, UnauthorizedDocumentAccess, DocumentNotDeleted
 
 class ProjectDocumentService:
     def __init__(self, session: AsyncSession) -> None:
@@ -76,7 +77,10 @@ class ProjectDocumentService:
         return ProjectDocumentResponse.model_validate(doc)
     
     async def delete(self, project_id: UUID, number: int, user_id: UUID) -> None:
-        await self._validate_project_owner(project_id, user_id)
+        project = await self._validate_project_owner(project_id, user_id)
+        if project.state == ProjectState.APPROVED:
+            raise DocumentNotDeleted()
+
         doc = await self._get_document(project_id, number)
 
         await self.session.delete(doc)
