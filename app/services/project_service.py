@@ -154,6 +154,7 @@ class ProjectService:
         self.session.add(evaluation)
         
         await self.session.commit()
+        await self.session.refresh(project)
         
         mail_service = MailService()
         try:
