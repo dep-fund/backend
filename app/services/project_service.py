@@ -16,8 +16,12 @@ from app.schemas.project import (
 from app.exceptions.project import (
     ProjectNotFound,
     UnauthorizedProjectAccess,
+    ProjectNotPending,
+    MissingMandatoryProjectInfo,
 )
+from app.models.project_evaluation import ProjectEvaluation
 from app.services.category_service import CategoryService
+from app.services.mail_service import MailService
 
 
 class ProjectService:
@@ -116,3 +120,51 @@ class ProjectService:
     async def admin_list(self, page: int = 1, page_size: int = 10) -> Tuple[int, List[ProjectResponse]]:
         query = self._base_query()
         return await self._paginate(query, page, page_size)
+
+    async def evaluate(self, project_id: UUID, admin_id: UUID, is_approved: bool, reason: str = None) -> ProjectResponse:
+        project = await self.session.scalar(
+            self._base_query().options(selectinload(Project.user)).where(Project.id == project_id)
+        )
+        if not project:
+            raise ProjectNotFound()
+
+        if project.state != ProjectState.PENDING:
+            raise ProjectNotPending()
+
+        if is_approved:
+            if not project.name or not project.description or project.total_amount is None:
+                raise MissingMandatoryProjectInfo()
+            if not project.ubication:
+                raise MissingMandatoryProjectInfo()
+            if not project.categories or len(project.categories) == 0:
+                raise MissingMandatoryProjectInfo()
+            
+            project.state = ProjectState.APPROVED
+            new_state = ProjectState.APPROVED
+        else:
+            project.state = ProjectState.REJECTED
+            new_state = ProjectState.REJECTED
+
+        evaluation = ProjectEvaluation(
+            project_id=project_id,
+            admin_id=admin_id,
+            description=reason,
+            state=new_state
+        )
+        self.session.add(evaluation)
+        
+        await self.session.commit()
+        await self.session.refresh(project)
+        
+        mail_service = MailService()
+        try:
+            mail_service.send_project_status_email(
+                email=project.user.email,
+                project_name=project.name,
+                is_approved=is_approved,
+                rejection_reason=reason
+            )
+        except Exception:
+            pass
+            
+        return ProjectResponse.model_validate(project)

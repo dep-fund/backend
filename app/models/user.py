@@ -10,6 +10,7 @@ from app.core.enums import AuthProvider, UserType
 if TYPE_CHECKING:
     from app.models.role import Role
     from app.models.project import Project
+    from app.models.project_evaluation import ProjectEvaluation
 
 
 class User(Base):
@@ -60,3 +61,4 @@ class AdminUser(Base):
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True),ForeignKey("USER.id"),primary_key=True)
     user: Mapped["User"] = relationship(back_populates="admin")
+    evaluations: Mapped[list["ProjectEvaluation"]] = relationship("ProjectEvaluation", back_populates="admin")

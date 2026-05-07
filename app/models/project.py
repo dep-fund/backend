@@ -13,6 +13,8 @@ from app.models.category_project import CategoryProject
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.category import Category
+    from app.models.project_evaluation import ProjectEvaluation
+    
 
 from app.models.project_document import ProjectDocument
 from app.models.project_advance import ProjectAdvance
@@ -52,3 +54,4 @@ class Project(Base):
         "ProjectAdvance",
         back_populates="project"
     )
+    evaluations: Mapped[list["ProjectEvaluation"]] = relationship("ProjectEvaluation", back_populates="project")
