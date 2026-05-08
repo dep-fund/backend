@@ -1,8 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 
-class ProjectDocumentCreate(BaseModel):
-    url: str
 
 class ProjectDocumentResponse(BaseModel):
     project_id: UUID
