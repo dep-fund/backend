@@ -5,3 +5,4 @@ from app.models.permission_role import PermissionRole
 from app.models.project import Project
 from app.models.project_document import ProjectDocument
 from app.models.project_advance import ProjectAdvance
+from app.models.project_evaluation import ProjectEvaluation
