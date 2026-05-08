@@ -10,3 +10,9 @@ passlib[bcrypt]
 asyncpg
 authlib
 httpx
+cloudinary
+python-multipart
+pre-commit
+ruff
+pytest
+pytest-asyncio

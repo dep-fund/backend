@@ -12,7 +12,6 @@ class StandardUserRegisterRequest(BaseModel):
     birthdate: Optional[date] = None
     email: EmailStr
     password: str
-    image: Optional[str] = None
 
     @field_validator("password")
     @classmethod
@@ -28,7 +27,6 @@ class StandardUserUpdateRequest(BaseModel):
     last_name: Optional[str] = None
     birthdate: Optional[date] = None
     email: Optional[EmailStr] = None
-    image: Optional[str] = None
 
 
 class StandardUserChangePasswordRequest(BaseModel):

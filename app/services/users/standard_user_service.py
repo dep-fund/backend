@@ -83,7 +83,6 @@ class StandardUserService:
             birthdate=data.birthdate,
             email=data.email,
             password=hash_password(data.password),
-            image=data.image,
             type=UserType.STANDARD,
             role_id=role.id,
         )
@@ -96,11 +95,13 @@ class StandardUserService:
 
         return StandardUserResponse.model_validate(user)
 
-    async def update(self, user_id: UUID, data: StandardUserUpdateRequest) -> StandardUserResponse:
+    async def update(
+        self, user_id: UUID, data: StandardUserUpdateRequest
+    ) -> StandardUserResponse:
         user = await self._user_service.get_by_id(user_id)
         if not user:
             raise UserNotFound()
-        
+
         for field, value in data.model_dump(exclude_none=True).items():
             setattr(user, field, value)
         await self.session.commit()
@@ -115,7 +116,7 @@ class StandardUserService:
             raise UserNotFound()
         if not verify_password(data.old_password, user.password):
             raise WrongCurrentPassword()
-        
+
         user.password = hash_password(data.new_password)
         await self.session.commit()
         await self.session.refresh(user)
@@ -131,3 +132,10 @@ class StandardUserService:
         await self.session.commit()
 
         return {"detail": "User deleted successfully"}
+
+    async def update_avatar(self, user_id: UUID, *, url: str) -> StandardUserResponse:
+        user = await self._user_service.get_by_id(user_id)
+        user.image = url
+        await self.session.commit()
+        await self.session.refresh(user)
+        return StandardUserResponse.model_validate(user)
