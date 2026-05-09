@@ -1,17 +1,16 @@
 import pytest
 from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock
-from datetime import datetime, timezone
 
 from app.services.project_document_service import ProjectDocumentService
-from app.schemas.project_document import ProjectDocumentCreate
 from app.models.project_document import ProjectDocument
 from app.core.enums import ProjectState
 from app.exceptions.project_document import (
     DocumentNotFound,
     UnauthorizedDocumentAccess,
-    DocumentNotDeleted
+    DocumentNotDeleted,
 )
+
 
 def make_project(owner_id, state=ProjectState.PENDING):
     project = MagicMock()
@@ -28,18 +27,17 @@ async def test_create_document_success(mock_session):
     mock_project_service = MagicMock()
     mock_project_service._get_project = AsyncMock(return_value=make_project(user_id))
 
-    mock_session.scalar = AsyncMock(return_value=1)
     mock_session.add = MagicMock()
     mock_session.commit = AsyncMock()
 
     service = ProjectDocumentService(mock_session)
     service._project_service = mock_project_service
 
-    data = ProjectDocumentCreate(url="http://test.com")
+    url = "http://test.com/file.pdf"
 
-    response = await service.create(project_id, user_id, data)
+    response = await service.create(project_id, user_id, url=url)
 
-    assert response.url == "http://test.com"
+    assert response.url == url
 
 
 @pytest.mark.asyncio
@@ -53,10 +51,8 @@ async def test_create_document_unauthorized(mock_session):
     service = ProjectDocumentService(mock_session)
     service._project_service = mock_project_service
 
-    data = ProjectDocumentCreate(url="http://test.com")
-
     with pytest.raises(UnauthorizedDocumentAccess):
-        await service.create(project_id, user_id, data)
+        await service.create(project_id, user_id, url="http://test.com/file.pdf")
 
 
 @pytest.mark.asyncio
@@ -64,12 +60,10 @@ async def test_list_by_project(mock_session):
     project_id = uuid4()
     user_id = uuid4()
 
-    now = datetime.now(timezone.utc)
-
     doc = ProjectDocument(
         project_id=project_id,
         number=1,
-        url="http://test.com"
+        url="http://test.com/file.pdf",
     )
 
     mock_project_service = MagicMock()
@@ -77,7 +71,6 @@ async def test_list_by_project(mock_session):
 
     mock_result = MagicMock()
     mock_result.all.return_value = [doc]
-
     mock_session.scalars = AsyncMock(return_value=mock_result)
 
     service = ProjectDocumentService(mock_session)
@@ -86,7 +79,7 @@ async def test_list_by_project(mock_session):
     result = await service.list_by_project(project_id, user_id)
 
     assert len(result) == 1
-    assert result[0].url == "http://test.com"
+    assert result[0].url == doc.url
 
 
 @pytest.mark.asyncio
@@ -112,7 +105,6 @@ async def test_delete_document_success(mock_session):
     user_id = uuid4()
 
     project = make_project(user_id, ProjectState.PENDING)
-
     doc = MagicMock()
 
     mock_project_service = MagicMock()

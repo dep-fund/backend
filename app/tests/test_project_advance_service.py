@@ -1,16 +1,15 @@
 import pytest
 from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock
-from datetime import datetime, timezone
 
 from app.services.project_advance_service import ProjectAdvanceService
-from app.schemas.project_advance import ProjectAdvanceCreate
 from app.models.project_advance import ProjectAdvance
 from app.core.enums import ProjectState
 from app.exceptions.project_advance import (
     AdvanceNotFound,
-    UnauthorizedAdvanceAccess
+    UnauthorizedAdvanceAccess,
 )
+
 
 def make_project(owner_id, state=ProjectState.PENDING):
     project = MagicMock()
@@ -27,21 +26,21 @@ async def test_create_advance_success(mock_session):
     mock_project_service = MagicMock()
     mock_project_service._get_project = AsyncMock(return_value=make_project(user_id))
 
-    mock_session.scalar = AsyncMock(return_value=1)
     mock_session.add = MagicMock()
     mock_session.commit = AsyncMock()
 
     service = ProjectAdvanceService(mock_session)
     service._project_service = mock_project_service
 
-    data = ProjectAdvanceCreate(
+    response = await service.create(
+        project_id,
+        user_id,
         description="advance 1",
-        url="http://test.com"
+        url="http://test.com/file.pdf",
     )
 
-    response = await service.create(project_id, user_id, data)
-
-    assert response.url == "http://test.com"
+    assert response.url == "http://test.com/file.pdf"
+    assert response.description == "advance 1"
 
 
 @pytest.mark.asyncio
@@ -55,13 +54,13 @@ async def test_create_advance_unauthorized(mock_session):
     service = ProjectAdvanceService(mock_session)
     service._project_service = mock_project_service
 
-    data = ProjectAdvanceCreate(
-        description="advance 1",
-        url="http://test.com"
-    )
-
     with pytest.raises(UnauthorizedAdvanceAccess):
-        await service.create(project_id, user_id, data)
+        await service.create(
+            project_id,
+            user_id,
+            description="advance 1",
+            url="http://test.com/file.pdf",
+        )
 
 
 @pytest.mark.asyncio
@@ -73,7 +72,7 @@ async def test_list_by_project(mock_session):
         project_id=project_id,
         number=1,
         description="adv",
-        url="http://test.com"
+        url="http://test.com",
     )
 
     mock_project_service = MagicMock()
@@ -96,9 +95,10 @@ async def test_list_by_project(mock_session):
 @pytest.mark.asyncio
 async def test_get_by_project_and_number_not_found(mock_session):
     project_id = uuid4()
+    user_id = uuid4()
 
     mock_project_service = MagicMock()
-    mock_project_service._get_project = AsyncMock(return_value=make_project(uuid4()))
+    mock_project_service._get_project = AsyncMock(return_value=make_project(user_id))
 
     mock_session.scalar = AsyncMock(return_value=None)
 
@@ -139,7 +139,7 @@ async def test_admin_list_by_project(mock_session):
         project_id=project_id,
         number=1,
         description="adv",
-        url="http://test.com"
+        url="http://test.com",
     )
 
     mock_project_service = MagicMock()
