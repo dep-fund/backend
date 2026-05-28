@@ -19,6 +19,7 @@ class ProjectState(str, Enum):
 
 
 class FileFolder(str, Enum):
+    PROJECT_IMAGES = "projects/images"
     PROJECT_DOCUMENTS = "projects/documents"
     PROJECT_ADVANCES = "projects/advances"
     USER_AVATARS = "users/avatars"
