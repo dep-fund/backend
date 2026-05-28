@@ -18,9 +18,7 @@ class ProjectImageService:
     async def create(
         self, project_id: UUID, user_id: UUID, *, url: str, public_id: str
     ) -> ProjectImageResponse:
-        project = await self._project_service._get_project(project_id)
-        if project.user_id != user_id:
-            raise UnauthorizedImageAccess()
+        await self._validate_project_owner(project_id, user_id)
 
         max_number = await self.session.scalar(
             select(func.max(ProjectImage.number)).where(
