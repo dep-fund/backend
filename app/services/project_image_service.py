@@ -70,3 +70,22 @@ class ProjectImageService:
         image = await self._get_image(project_id, number)
         await self.session.delete(image)
         await self.session.commit()
+
+    async def admin_list_by_project(
+        self, project_id: UUID
+    ) -> list[ProjectImageResponse]:
+        await self._project_service._get_project(project_id)
+
+        result = await self.session.scalars(
+            select(ProjectImage)
+            .where(ProjectImage.project_id == project_id)
+            .order_by(ProjectImage.number)
+        )
+        return [ProjectImageResponse.model_validate(img) for img in result.all()]
+
+    async def admin_get_by_project_and_number(
+        self, project_id: UUID, number: int
+    ) -> ProjectImageResponse:
+        await self._project_service._get_project(project_id)
+        image = await self._get_image(project_id, number)
+        return ProjectImageResponse.model_validate(image)
