@@ -6,7 +6,11 @@ from sqlalchemy.engine import URL
 
 
 def _read_secret(name: str, fallback: str = "") -> str:
-    """Lee un Docker Secret desde /run/secrets/, con fallback para desarrollo local."""
+    """Lee un Docker Secret desde /run/secrets/, con fallback a env vars o default."""
+    env_name = name.upper()
+    if os.getenv(env_name):
+        return os.environ[env_name]
+        
     secret_path = Path(f"/run/secrets/{name}")
     if secret_path.exists():
         return secret_path.read_text().strip()

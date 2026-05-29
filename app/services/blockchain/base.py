@@ -59,7 +59,9 @@ class BlockchainClient:
         """Sign and send a transaction, waiting for the receipt."""
         tx["nonce"] = self.w3.eth.get_transaction_count(self.deployer.address)
         tx["gas"] = self.w3.eth.estimate_gas(tx)
-        tx["gasPrice"] = self.w3.eth.gas_price
+
+        if "gasPrice" in tx and ("maxFeePerGas" in tx or "maxPriorityFeePerGas" in tx):
+            del tx["gasPrice"]
 
         signed = self.deployer.sign_transaction(tx)
         tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
