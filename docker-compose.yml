@@ -29,6 +29,19 @@ secrets:
     file: ./secrets/deployer_private_key.txt
 
 services:
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    container_name: anvil
+    restart: unless-stopped
+    entrypoint: ["anvil", "--host", "0.0.0.0", "--port", "8545"]
+    ports:
+      - "8545:8545"
+    healthcheck:
+      test: ["CMD", "cast", "chain-id"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   db:
     image: postgres:16
     container_name: db
@@ -95,8 +108,11 @@ services:
       SENDER_EMAIL: depfund.soporte@gmail.com
       FRONTEND_URL: "http://localhost:5173"
       BACKOFFICE_URL: "http://localhost:5173"
+      RPC_URL: "http://anvil:8545"
     depends_on:
       db:
+        condition: service_healthy
+      anvil:
         condition: service_healthy
     volumes:
       - ./:/app
