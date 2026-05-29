@@ -25,11 +25,5 @@ class DividendsService(BaseContractService):
         self._contract = self.client.get_contract(self.contract_name, address)
         return address
 
-    def pending(self, holder: str) -> int:
-        return self.call("pending", holder)
-
     def distribute(self, usdc_amount: int) -> dict:
         return self.transact("distribute", usdc_amount)
-
-    def claim(self) -> dict:
-        return self.transact("claim")

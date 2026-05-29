@@ -46,12 +46,3 @@ class OfferingService(BaseContractService):
 
     def contributions(self, address: str) -> int:
         return self.call("contributions", address)
-
-    def invest(self, usdc_amount: int) -> dict:
-        return self.transact("invest", usdc_amount)
-
-    def refund(self) -> dict:
-        return self.transact("refund")
-
-    def withdraw(self) -> dict:
-        return self.transact("withdraw")
