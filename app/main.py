@@ -32,6 +32,7 @@ from app.routes.project_image.standard_user_project_image import (
     router as standard_project_image,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes.project_image.admin_project_image import router as admin_project_images
 
 app = FastAPI(
     title="DepFund API",
@@ -68,3 +69,4 @@ app.include_router(admin_project_router)
 app.include_router(admin_category_router)
 app.include_router(admin_project_advance)
 app.include_router(admin_project_document)
+app.include_router(admin_project_images)
