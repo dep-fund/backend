@@ -1,4 +1,4 @@
-.PHONY: dev-up dev-down dev-logs dev-db prod-up prod-down
+.PHONY: dev-up dev-down dev-logs dev-logs-deployer dev-logs-anvil dev-db prod-up prod-down
 
 # --- Entorno de Desarrollo ---
 
