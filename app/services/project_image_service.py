@@ -53,9 +53,7 @@ class ProjectImageService:
             raise ImageNotFound()
         return image
 
-    async def list_by_project(
-        self, project_id: UUID, user_id: UUID
-    ) -> list[ProjectImageResponse]:
+    async def list_by_project(self, project_id: UUID) -> list[ProjectImageResponse]:
         await self._project_service._get_project(project_id)
 
         result = await self.session.scalars(
