@@ -41,9 +41,7 @@ async def list_images(
     current_user: User = Depends(get_current_standard_user),
     session: AsyncSession = Depends(get_session),
 ):
-    return await ProjectImageService(session).list_by_project(
-        project_id, current_user.id
-    )
+    return await ProjectImageService(session).list_by_project(project_id)
 
 
 @router.delete("/{project_id}/images/{number}", status_code=status.HTTP_204_NO_CONTENT)

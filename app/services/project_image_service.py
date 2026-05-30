@@ -56,7 +56,7 @@ class ProjectImageService:
     async def list_by_project(
         self, project_id: UUID, user_id: UUID
     ) -> list[ProjectImageResponse]:
-        await self._validate_project_owner(project_id, user_id)
+        await self._project_service._get_project(project_id)
 
         result = await self.session.scalars(
             select(ProjectImage)
