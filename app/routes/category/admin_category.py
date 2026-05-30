@@ -65,3 +65,13 @@ async def get_category(
     current_user=Depends(get_current_admin_user),
 ):
     return await CategoryService(session).get_by_id(category_id)
+
+
+@router.delete("/{category_id}", status_code=204)
+async def delete_category(
+    category_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user=Depends(get_current_admin_user),
+):
+    await CategoryService(session).delete(category_id)
+
