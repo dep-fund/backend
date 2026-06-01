@@ -12,6 +12,8 @@ from app.schemas.category import (
 )
 
 from app.exceptions.category import CategoryNotFound
+from app.exceptions.category import CategoryHasProjects
+from app.models.category_project import CategoryProject
 
 
 class CategoryService:
@@ -86,3 +88,23 @@ class CategoryService:
         ).all()
 
         return total or 0, [CategoryResponse.model_validate(c) for c in categories]
+    
+    
+    async def delete(self, category_id: UUID):
+        result = await self.session.execute(
+            select(Category).where(Category.id == category_id)
+        )
+        category = result.scalar_one_or_none()
+
+        if not category:
+            raise CategoryNotFound()
+
+        has_projects = await self.session.scalar(
+            select(func.count()).where(CategoryProject.category_id == category_id)
+        )
+
+        if has_projects:
+            raise CategoryHasProjects()
+
+        await self.session.delete(category)
+        await self.session.commit()
