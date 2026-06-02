@@ -14,7 +14,7 @@ TEST_DATABASE_URL = (
     f"{os.getenv('POSTGRES_USER', 'test_user')}:"
     f"{os.getenv('POSTGRES_PASSWORD', 'test_password')}@"
     f"{os.getenv('POSTGRES_HOST', 'localhost')}:"
-    f"{os.getenv('POSTGRES_PORT', '5433')}/"
+    f"{os.getenv('POSTGRES_PORT', '5434')}/"
     f"{os.getenv('POSTGRES_DB', 'depfund_test')}"
 )
 
@@ -75,8 +75,7 @@ async def clean_db():
 @pytest_asyncio.fixture
 async def client() -> AsyncClient:
     async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         yield ac
 
@@ -95,19 +94,27 @@ async def db_session() -> AsyncSession:
 # ---------------------------------------------------------------
 @pytest_asyncio.fixture
 async def standard_user_auth_headers(client: AsyncClient) -> dict:
-    register_response = await client.post("/users/register", json={
-        "username": "testuser",
-        "name": "Standard",
-        "last_name": "User",
-        "email": "user@depfund.com",
-        "password": "UserPassword123!",
-    })
-    assert register_response.status_code == 201, f"Register failed: {register_response.json()}"
+    register_response = await client.post(
+        "/users/register",
+        json={
+            "username": "testuser",
+            "name": "Standard",
+            "last_name": "User",
+            "email": "user@depfund.com",
+            "password": "UserPassword123!",
+        },
+    )
+    assert register_response.status_code == 201, (
+        f"Register failed: {register_response.json()}"
+    )
 
-    response = await client.post("/auth/login", json={
-        "identifier": "user@depfund.com",
-        "password": "UserPassword123!",
-    })
+    response = await client.post(
+        "/auth/login",
+        json={
+            "identifier": "user@depfund.com",
+            "password": "UserPassword123!",
+        },
+    )
     assert response.status_code == 200, f"Login failed: {response.json()}"
 
     token = response.json()["access_token"]
@@ -119,20 +126,28 @@ async def standard_user_auth_headers(client: AsyncClient) -> dict:
 # ---------------------------------------------------------------
 @pytest_asyncio.fixture
 async def admin_auth_headers(client: AsyncClient) -> dict:
-    register_response = await client.post("/admin/users", json={
-        "admin_secret_key": os.getenv("ADMIN_SECRET_KEY", "develop"),
-        "username": "admintest",
-        "name": "Admin",
-        "last_name": "Test",
-        "email": "admin@depfund.com",
-        "password": "AdminPassword123!",
-    })
-    assert register_response.status_code == 201, f"Admin create failed: {register_response.json()}"
+    register_response = await client.post(
+        "/admin/users",
+        json={
+            "admin_secret_key": os.getenv("ADMIN_SECRET_KEY", "develop"),
+            "username": "admintest",
+            "name": "Admin",
+            "last_name": "Test",
+            "email": "admin@depfund.com",
+            "password": "AdminPassword123!",
+        },
+    )
+    assert register_response.status_code == 201, (
+        f"Admin create failed: {register_response.json()}"
+    )
 
-    response = await client.post("/admin/auth/login", json={
-        "identifier": "admin@depfund.com",
-        "password": "AdminPassword123!",
-    })
+    response = await client.post(
+        "/admin/auth/login",
+        json={
+            "identifier": "admin@depfund.com",
+            "password": "AdminPassword123!",
+        },
+    )
     assert response.status_code == 200, f"Admin login failed: {response.json()}"
 
     token = response.json()["access_token"]
