@@ -43,9 +43,9 @@ app.dependency_overrides[get_session] = override_get_session
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_db():
     async with engine_test.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    # Seedea roles una sola vez
     async with TestingSessionLocal() as session:
         session.add(Role(type="ADMIN"))
         session.add(Role(type="STANDARD"))
