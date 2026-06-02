@@ -16,3 +16,4 @@ pre-commit
 ruff
 pytest
 pytest-asyncio
+web3

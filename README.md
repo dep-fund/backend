@@ -45,18 +45,37 @@ Create a `.env` file in the project root based on the variables listed in the [e
 
 ---
 
-## Docker
+## Docker y Entornos
 
+Creamos un `Makefile` para no tener que escribir los comandos largos de Docker. Existen dos configuraciones dependiendo de si estás en desarrollo o producción.
+
+### Entorno de Desarrollo (Testing Local)
+Incluye la base de datos, el backend con hot-reload, un nodo blockchain local (`anvil`) y despliega automáticamente los contratos de prueba.
+
+Para levantar el entorno (y reconstruir si hay cambios):
 ```bash
-docker compose up --build
+make dev-up
 ```
 
-Extra commands
+Para apagar el entorno (asegura que `anvil` también se apague):
 ```bash
-docker compose down                  # stop
-docker compose down -v               # stop + wipe database
-docker compose logs -f backend       # tail logs
-docker exec -it db psql -U postgres -d depfund
+make dev-down
+```
+
+### Candidato a Deploy (Producción)
+Solo levanta la base de datos y el backend. No incluye Anvil ni inicializa contratos, asumiendo conexión a una red remota.
+
+```bash
+make prod-up
+make prod-down
+```
+
+### Comandos Útiles
+
+```bash
+make dev-down-v      # stop + wipe database local
+make dev-logs        # tail logs del backend en local
+make dev-db          # entrar a la base de datos por consola
 ```
 
 > The backend connects to Postgres on port `5432` internally.

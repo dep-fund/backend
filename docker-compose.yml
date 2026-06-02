@@ -25,6 +25,8 @@ secrets:
     file: ./secrets/cloudinary_api_key.txt
   cloudinary_api_secret:
     file: ./secrets/cloudinary_api_secret.txt
+  deployer_private_key:
+    file: ./secrets/deployer_private_key.txt
 
 services:
   db:
@@ -84,6 +86,7 @@ services:
       - cloudinary_cloud_name
       - cloudinary_api_key
       - cloudinary_api_secret
+      - deployer_private_key
     environment:
       IN_DOCKER: "1"
       PYTHONUNBUFFERED: "1"
