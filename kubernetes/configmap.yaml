@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: depfund-config
+  namespace: depfund
+data:
+  POSTGRES_HOST: "ep-square-hill-an7t5zyb-pooler.c-6.us-east-1.aws.neon.tech"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "neondb"
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SENDER_EMAIL: "depfund.soporte@gmail.com"
+  FRONTEND_URL: "http://LOAD_BALANCER_IP"
+  BACKOFFICE_URL: "http://LOAD_BALANCER_IP/admin"
+  RPC_URL: "https://sepolia.infura.io/v3/YOUR-PROJECT-ID"
+  TREASURY_ADDRESS: "0x2560d5b0CDe93D618425FadfC9F5511e8730Af90"
+  USDC_ADDRESS: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+  MARKETPLACE_ADDRESS: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+  FACTORY_ADDRESS: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  PLATFORM_ADDRESS: "0x2560d5b0CDe93D618425FadfC9F5511e8730Af90"
+  LOG_SQL_QUERIES: "0"
+  GOOGLE_REDIRECT_URI: "http://LOAD_BALANCER_IP/auth/google/callback"
+  GOOGLE_AUTH_URL: "https://accounts.google.com/o/oauth2/v2/auth"
+  GOOGLE_TOKEN_URL: "https://accounts.google.com/o/oauth2/token"
+  GOOGLE_USERINFO_URL: "https://www.googleapis.com/oauth2/v3/userinfo"

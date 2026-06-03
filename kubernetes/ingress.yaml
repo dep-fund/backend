@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: depfund-ingress
+  namespace: depfund
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "prod-depfund-ingress-ip"
+spec:
+  ingressClassName: gce
+  defaultBackend:
+    service:
+      name: depfund-backend
+      port:
+        number: 8000

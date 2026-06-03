@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: depfund-backup
+  namespace: depfund
+spec:
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: backup-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: gcr.io/google-containers/busybox:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "Backup iniciado: $(date)"
+                  
+                  echo "--- PostgreSQL Dump ---"
+                  PGPASSWORD=$PGPASSWORD pg_dump \
+                    -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDB \
+                    --no-owner --no-acl \
+                    -F c \
+                    > /tmp/depfund_db_$(date +%Y%m%d_%H%M%S).dump
+                  
+                  echo "--- Subiendo a GCS ---"
+                  gsutil cp /tmp/depfund_db_*.dump gs://$BUCKET/db/
+                  
+                  echo "--- Limpiando ---"
+                  rm -f /tmp/depfund_db_*.dump
+                  echo "Backup completado: $(date)"
+              env:
+                - name: PGHOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: depfund-config
+                      key: POSTGRES_HOST
+                - name: PGPORT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: depfund-config
+                      key: POSTGRES_PORT
+                - name: PGDB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: depfund-config
+                      key: POSTGRES_DB
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: depfund-secrets
+                      key: POSTGRES_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: depfund-secrets
+                      key: POSTGRES_PASSWORD
+                - name: BUCKET
+                  value: "prod-depfund-backups"
+              resources:
+                requests:
+                  cpu: "200m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "512Mi"

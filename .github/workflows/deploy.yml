@@ -1,0 +1,97 @@
+name: Deploy to GKE
+
+on:
+  workflow_run:
+    workflows: ["Build & Push"]
+    types:
+      - completed
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  CLUSTER_NAME: prod-depfund-cluster
+  CLUSTER_LOCATION: us-central1
+  NAMESPACE: depfund
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+          location: ${{ env.CLUSTER_LOCATION }}
+
+      - name: Create namespace if needed
+        run: |
+          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Set image tag from latest build
+        run: |
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          IMAGE="us-central1-docker.pkg.dev/$PROJECT_ID/depfund/backend:$SHA_SHORT"
+          sed -i "s|REPLACE_PROJECT|$PROJECT_ID|g" kubernetes/deployment.yaml
+          echo "Using image: $IMAGE"
+
+      - name: Inject secrets into cluster
+        run: |
+          kubectl create secret generic depfund-secrets \
+            --namespace $NAMESPACE \
+            --dry-run=client -o yaml \
+            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+            --from-literal=ADMIN_SECRET_KEY="${{ secrets.ADMIN_SECRET_KEY }}" \
+            --from-literal=SENDER_PASSWORD="${{ secrets.SENDER_PASSWORD }}" \
+            --from-literal=GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+            --from-literal=GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+            --from-literal=CLOUDINARY_CLOUD_NAME="${{ secrets.CLOUDINARY_CLOUD_NAME }}" \
+            --from-literal=CLOUDINARY_API_KEY="${{ secrets.CLOUDINARY_API_KEY }}" \
+            --from-literal=CLOUDINARY_API_SECRET="${{ secrets.CLOUDINARY_API_SECRET }}" \
+            --from-literal=DEPLOYER_PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" \
+            | kubectl apply -f -
+
+      - name: Update ConfigMap with correct values
+        run: |
+          LOAD_BALANCER_IP=$(kubectl get ingress depfund-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "PENDING")
+          sed -i "s/LOAD_BALANCER_IP/$LOAD_BALANCER_IP/g" kubernetes/configmap.yaml
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f kubernetes/configmap.yaml
+          kubectl apply -f kubernetes/deployment.yaml
+          kubectl apply -f kubernetes/service.yaml
+          kubectl apply -f kubernetes/ingress.yaml
+          kubectl apply -f kubernetes/hpa.yaml
+          kubectl apply -f kubernetes/backup-cronjob.yaml
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/depfund-backend -n $NAMESPACE --timeout=5m
+
+      - name: Check health
+        run: |
+          echo "Waiting for load balancer..."
+          sleep 30
+          IP=$(kubectl get ingress depfund-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -n "$IP" ] && [ "$IP" != "null" ]; then
+            echo "Load balancer IP: $IP"
+            curl -sI "http://$IP/health" || echo "Health check failed (may still be provisioning)"
+          else
+            echo "Load balancer IP not ready yet—run later: kubectl get ingress -n $NAMESPACE"
+          fi

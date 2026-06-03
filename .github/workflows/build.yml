@@ -1,0 +1,48 @@
+name: Build & Push
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "infrastructure/**"
+      - "kubernetes/**"
+      - "scripts/**"
+      - "**.md"
+
+env:
+  REGISTRY: us-central1-docker.pkg.dev
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REPOSITORY: depfund
+  IMAGE: backend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker $REGISTRY
+
+      - name: Build & Push
+        run: |
+          SHA_SHORT=$(echo $GITHUB_SHA | head -c 7)
+          TAG_SHA="$REGISTRY/$PROJECT_ID/$REPOSITORY/$IMAGE:$SHA_SHORT"
+          TAG_LATEST="$REGISTRY/$PROJECT_ID/$REPOSITORY/$IMAGE:latest"
+
+          docker build -t $TAG_SHA -t $TAG_LATEST .
+          docker push $TAG_SHA
+          docker push $TAG_LATEST
+
+          echo "image=$TAG_SHA" >> $GITHUB_OUTPUT

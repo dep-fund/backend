@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: depfund-backend
+  namespace: depfund
+  labels:
+    app: depfund-backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: depfund-backend
