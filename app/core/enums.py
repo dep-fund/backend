@@ -23,3 +23,10 @@ class FileFolder(str, Enum):
     PROJECT_DOCUMENTS = "projects/documents"
     PROJECT_ADVANCES = "projects/advances"
     USER_AVATARS = "users/avatars"
+
+
+class TransactionType(str, Enum):
+    BUY = "BUY"
+    SELL = "SELL"
+    DIVIDEND = "DIVIDEND"
+    INVESTMENT = "INVESTMENT"
