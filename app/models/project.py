@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.category import Category
     from app.models.project_evaluation import ProjectEvaluation
+    from app.models.transaction import Transaction
 
 
 from app.models.project_document import ProjectDocument
@@ -63,4 +64,7 @@ class Project(Base):
     )
     evaluations: Mapped[list["ProjectEvaluation"]] = relationship(
         "ProjectEvaluation", back_populates="project"
+    )
+    transactions: Mapped[list["Transaction"]] = relationship(
+        "Transaction", back_populates="project"
     )

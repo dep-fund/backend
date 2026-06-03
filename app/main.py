@@ -31,6 +31,7 @@ from app.routes.project_document.standard_user_project_document import (
 from app.routes.project_image.standard_user_project_image import (
     router as standard_project_image,
 )
+from app.routes.wallet import router as wallet_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.project_image.admin_project_image import router as admin_project_images
 
@@ -59,6 +60,7 @@ app.include_router(standard_user_category_router)
 app.include_router(standard_project_advance)
 app.include_router(standard_project_document)
 app.include_router(standard_project_image)
+app.include_router(wallet_router)
 
 # admin
 app.include_router(admin_auth_router)
