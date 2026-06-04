@@ -18,6 +18,13 @@ class ProjectState(str, Enum):
     REJECTED = "REJECTED"
 
 
+class RiskLevel(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    
+    
+
 class FileFolder(str, Enum):
     PROJECT_IMAGES = "projects/images"
     PROJECT_DOCUMENTS = "projects/documents"
