@@ -3,11 +3,10 @@ from typing import Optional, List
 from uuid import UUID
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.core.enums import ProjectState
+from app.core.enums import ProjectState,RiskLevel
 from app.schemas.category import CategoryResponse
-
 
 class ProjectCreateRequest(BaseModel):
     name: str
@@ -15,6 +14,11 @@ class ProjectCreateRequest(BaseModel):
     total_amount: Decimal
     ubication: str
     category_ids: Optional[List[UUID]] = None
+    min_amount: Optional[Decimal] = None
+    risk: Optional[RiskLevel] = None
+    annual_expenses: Optional[Decimal] = None
+    annual_profits: Optional[Decimal] = None
+    suffix: Optional[str] = Field(None, min_length=3, max_length=50)
 
 
 class ProjectUpdateRequest(BaseModel):
@@ -24,10 +28,16 @@ class ProjectUpdateRequest(BaseModel):
     ubication: Optional[str] = None
     state: Optional[ProjectState] = None
     category_ids: Optional[List[UUID]] = None
+    min_amount: Optional[Decimal] = None
+    risk: Optional[RiskLevel] = None
+    annual_expenses: Optional[Decimal] = None
+    annual_profits: Optional[Decimal] = None
+    suffix: Optional[str] = Field(None, min_length=3, max_length=50)
 
 
 class ProjectRejectRequest(BaseModel):
     reason: str
+
 
 
 class ProjectResponse(BaseModel):
@@ -41,5 +51,19 @@ class ProjectResponse(BaseModel):
     categories: List[CategoryResponse]
     created_at: datetime
     updated_at: datetime
+    min_amount: Optional[Decimal] = None
+    risk: Optional[RiskLevel] = None
+    annual_expenses: Optional[Decimal] = None
+    annual_profits: Optional[Decimal] = None
+    roi: Optional[Decimal] = None
+    annual_benefits: Optional[Decimal] = None
+    suffix: Optional[str] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)    
+    
+    
+    
+    
+    
+    
+    
