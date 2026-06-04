@@ -2,6 +2,7 @@ from enum import IntEnum
 
 from app.services.blockchain.base_contract_service import BaseContractService
 from app.core.config import settings
+from app.services.blockchain.deployment import DeploymentReader
 
 
 class ListingStatus(IntEnum):
@@ -24,7 +25,8 @@ class MarketplaceService(BaseContractService):
     contract_name = "Marketplace"
 
     def __init__(self):
-        super().__init__(address=settings.MARKETPLACE_ADDRESS)
+        address = DeploymentReader.get_addresses()["marketplace_address"]
+        super().__init__(address=address)
 
     def _parse_listing(self, listing_id: int, raw: tuple) -> dict:
         """
