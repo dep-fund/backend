@@ -42,4 +42,8 @@ class DeploymentReader:
                 usdc_data,
                 "MockUSDC.sol\\MockUSDC",
             ),
+            "offering_address": cls._find_contract(
+                deploy_data,
+                "Offering",
+            ),
         }
