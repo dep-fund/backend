@@ -15,9 +15,8 @@ class ProjectCreateRequest(BaseModel):
     ubication: str
     category_ids: Optional[List[UUID]] = None
     min_amount: Optional[Decimal] = None
-    risk: Optional[RiskLevel] = None
     annual_expenses: Optional[Decimal] = None
-    annual_profits: Optional[Decimal] = None
+    annual_gross_profit: Optional[Decimal] = None
     suffix: Optional[str] = Field(None, min_length=3, max_length=50)
 
 
@@ -31,7 +30,7 @@ class ProjectUpdateRequest(BaseModel):
     min_amount: Optional[Decimal] = None
     risk: Optional[RiskLevel] = None
     annual_expenses: Optional[Decimal] = None
-    annual_profits: Optional[Decimal] = None
+    annual_gross_profit: Optional[Decimal] = None
     suffix: Optional[str] = Field(None, min_length=3, max_length=50)
 
 
@@ -54,7 +53,7 @@ class ProjectResponse(BaseModel):
     min_amount: Optional[Decimal] = None
     risk: Optional[RiskLevel] = None
     annual_expenses: Optional[Decimal] = None
-    annual_profits: Optional[Decimal] = None
+    annual_gross_profit: Optional[Decimal] = None
     roi: Optional[Decimal] = None
     annual_benefits: Optional[Decimal] = None
     suffix: Optional[str] = None

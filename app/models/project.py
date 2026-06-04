@@ -54,7 +54,7 @@ class Project(Base):
         Numeric(12, 2), nullable=True
     )
 
-    annual_profits: Mapped[Decimal | None] = mapped_column(
+    annual_gross_profit: Mapped[Decimal | None] = mapped_column(
         Numeric(12, 2), nullable=True
     )
 
