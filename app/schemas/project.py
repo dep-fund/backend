@@ -23,6 +23,14 @@ class ProjectCreateRequest(BaseModel):
 class ProjectUpdateRequest(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    ubication: Optional[str] = None
+    category_ids: Optional[List[UUID]] = None
+    annual_expenses: Optional[Decimal] = None
+    annual_gross_profit: Optional[Decimal] = None
+
+class ProjectUpdateAdminRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
     total_amount: Optional[Decimal] = None
     ubication: Optional[str] = None
     state: Optional[ProjectState] = None
@@ -31,7 +39,6 @@ class ProjectUpdateRequest(BaseModel):
     risk: Optional[RiskLevel] = None
     annual_expenses: Optional[Decimal] = None
     annual_gross_profit: Optional[Decimal] = None
-    suffix: Optional[str] = Field(None, min_length=3, max_length=50)
 
 
 class ProjectRejectRequest(BaseModel):
