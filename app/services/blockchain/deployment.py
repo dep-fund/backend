@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from web3 import Web3
+from app.core.config import settings
 
 
 class DeploymentReader:
@@ -42,4 +43,16 @@ class DeploymentReader:
             "offering_address": Web3.to_checksum_address(
                 cls._find_contract(deploy_data, "Offering")
             ),
+        }
+
+
+class DeploymentReaderProduction:
+    @classmethod
+    def get_addresses(cls) -> dict:
+        return {
+            "factory_address": Web3.to_checksum_address(settings.FACTORY_ADDRESS),
+            "marketplace_address": Web3.to_checksum_address(
+                settings.MARKETPLACE_ADDRESS
+            ),
+            "usdc_address": Web3.to_checksum_address(settings.USDC_ADDRESS),
         }

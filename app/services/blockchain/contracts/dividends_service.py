@@ -1,5 +1,5 @@
 from app.services.blockchain.base_contract_service import BaseContractService
-from app.services.blockchain.deployment import DeploymentReader
+from app.services.blockchain.deployment import DeploymentReaderProduction
 
 
 class DividendsService(BaseContractService):
@@ -14,12 +14,13 @@ class DividendsService(BaseContractService):
         """
         Deploy a new Dividends contract and return its address.
         """
-        addresses = DeploymentReader.get_addresses()
+        # addresses = DeploymentReader.get_addresses()
+        addresses = DeploymentReaderProduction.get_addresses()
 
         address = self.client.deploy_contract(
             self.contract_name,
             dpf_token,
-            addresses["usdc_address"],  
+            addresses["usdc_address"],
             issuer,
             offering,
         )
