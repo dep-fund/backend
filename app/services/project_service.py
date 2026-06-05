@@ -11,6 +11,7 @@ from app.schemas.project import (
     ProjectCreateRequest,
     ProjectUpdateRequest,
     ProjectResponse,
+    ProjectUpdateAdminRequest
 )
 
 from app.exceptions.project import (
@@ -53,24 +54,46 @@ class ProjectService:
         ).all()
         return total or 0, [ProjectResponse.model_validate(p) for p in projects]
 
-    async def create(self, user_id: UUID, data: ProjectCreateRequest) -> ProjectResponse:
+    async def create(
+        self,
+        user_id: UUID,
+        data: ProjectCreateRequest,
+    ) -> ProjectResponse:
+        annual_benefits = None
+        roi = None
+        
+        if data.annual_gross_profit is not None and data.annual_expenses is not None:
+            annual_benefits = data.annual_gross_profit - data.annual_expenses
+            if data.total_amount and data.total_amount > 0:
+                roi = (annual_benefits / data.total_amount) * 100
+
         project = Project(
             name=data.name,
             description=data.description,
             total_amount=data.total_amount,
             ubication=data.ubication,
+            min_amount=data.min_amount,
+            annual_expenses=data.annual_expenses,
+            annual_gross_profit=data.annual_gross_profit,
+            annual_benefits=annual_benefits,
+            roi=roi,
+            suffix=data.suffix,
             user_id=user_id,
         )
 
         if data.category_ids:
-            categories = await self._category_service.get_categories_by_ids(data.category_ids)
+            categories = await self._category_service.get_categories_by_ids(
+                data.category_ids
+            )
             project.categories = categories
 
         self.session.add(project)
         await self.session.commit()
-        project = await self._get_project(project.id)
+        await self.session.refresh(project)
 
+        project = await self._get_project(project.id)
         return ProjectResponse.model_validate(project)
+
 
     async def update(
         self,
@@ -83,7 +106,7 @@ class ProjectService:
         if project.user_id != user_id:
             raise UnauthorizedProjectAccess()
 
-        for field, value in data.model_dump(exclude_none=True).items():
+        for field, value in data.model_dump(exclude_unset=True).items():
             if field != "category_ids":
                 setattr(project, field, value)
 
@@ -92,9 +115,37 @@ class ProjectService:
             project.categories = categories
 
         await self.session.commit()
-        project = await self._get_project(project.id)
+        await self.session.refresh(project)
         
+        project = await self._get_project(project.id)
         return ProjectResponse.model_validate(project)
+
+
+    async def update_by_admin(
+        self,
+        project_id: UUID,
+        admin_id: UUID,
+        data: ProjectUpdateAdminRequest,
+    ) -> ProjectResponse:
+        project = await self._get_project(project_id)
+
+        for field, value in data.model_dump(exclude_unset=True).items():
+            if field != "category_ids":
+                setattr(project, field, value)
+
+        if data.category_ids is not None:
+            categories = await self._category_service.get_categories_by_ids(
+                data.category_ids
+            )
+            project.categories = categories
+
+        await self.session.commit()
+        await self.session.refresh(project)
+
+        project = await self._get_project(project.id)
+        return ProjectResponse.model_validate(project)
+
+
 
     async def list_by_user(self, user_id: UUID, page: int = 1, page_size: int = 10) -> Tuple[int, List[ProjectResponse]]:
         query = self._base_query().where(Project.user_id == user_id)
@@ -168,3 +219,6 @@ class ProjectService:
             pass
             
         return ProjectResponse.model_validate(project)
+    
+    
+    

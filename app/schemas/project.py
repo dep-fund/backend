@@ -31,15 +31,10 @@ class ProjectUpdateRequest(BaseModel):
 class ProjectUpdateAdminRequest(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    total_amount: Optional[Decimal] = None
     ubication: Optional[str] = None
     state: Optional[ProjectState] = None
-    category_ids: Optional[List[UUID]] = None
-    min_amount: Optional[Decimal] = None
     risk: Optional[RiskLevel] = None
-    annual_expenses: Optional[Decimal] = None
-    annual_gross_profit: Optional[Decimal] = None
-
+    category_ids: Optional[List[UUID]] = None
 
 class ProjectRejectRequest(BaseModel):
     reason: str
