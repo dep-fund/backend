@@ -1,10 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Numeric, String, DateTime, ForeignKey, Text, Enum as SAEnum, UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from app.core.database import Base
+
+from app.core.enums import RiskLevel
+
 import uuid
 
 from app.core.enums import ProjectState
@@ -16,6 +19,7 @@ if TYPE_CHECKING:
     from app.models.category import Category
     from app.models.project_evaluation import ProjectEvaluation
     from app.models.transaction import Transaction
+    from app.models.token_project import TokenProject
 
 
 from app.models.project_document import ProjectDocument
@@ -36,7 +40,30 @@ class Project(Base):
         nullable=False,
         default=ProjectState.PENDING,
     )
+    min_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+
+    risk: Mapped[RiskLevel | None] = mapped_column(
+        SAEnum(RiskLevel, name="risk_level"), nullable=True
+    )
+
+    annual_expenses: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2), nullable=True
+    )
+
+    annual_gross_profit: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2), nullable=True
+    )
+
+    roi: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+
+    annual_benefits: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2), nullable=True
+    )
+    suffix: Mapped[str | None] = mapped_column(String(50), nullable=True)
     ubication: Mapped[str] = mapped_column(String(255), nullable=True)
+    estimated_development_days: Mapped[int | None] = mapped_column(nullable=True)
+    dividend_address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    offering_address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -67,4 +94,7 @@ class Project(Base):
     )
     transactions: Mapped[list["Transaction"]] = relationship(
         "Transaction", back_populates="project"
+    )
+    token_project: Mapped[Optional["TokenProject"]] = relationship(
+        "TokenProject", back_populates="project", uselist=False
     )

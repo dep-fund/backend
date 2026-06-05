@@ -1,14 +1,11 @@
+from decimal import Decimal
 from app.services.blockchain.base_contract_service import BaseContractService
+from app.services.blockchain.deployment import DeploymentReader
 from app.core.config import settings
 import time
 
 
 class OfferingService(BaseContractService):
-    """
-    Service for deploying and operating Offering contracts.
-    One instance is required per project.
-    """
-
     contract_name = "Offering"
 
     def deploy(
@@ -16,21 +13,19 @@ class OfferingService(BaseContractService):
         dpf_token: str,
         soft_cap: int,
         hard_cap: int,
-        token_price: int,
+        token_price: Decimal,
         deadline_seconds: int,
     ) -> str:
-        """
-        Deploy a new Offering contract and return your address.
-        """
+        addresses = DeploymentReader.get_addresses()
         deadline = int(time.time()) + deadline_seconds
 
         address = self.client.deploy_contract(
             self.contract_name,
-            settings.USDC_ADDRESS,
+            addresses["usdc_address"],
             dpf_token,
-            soft_cap,
-            hard_cap,
-            token_price,
+            int(soft_cap),
+            int(hard_cap),
+            int(token_price),
             deadline,
             settings.TREASURY_ADDRESS,
         )

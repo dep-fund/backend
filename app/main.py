@@ -34,6 +34,8 @@ from app.routes.project_image.standard_user_project_image import (
 )
 from app.routes.wallet import router as wallet_router
 from app.routes.project_image.admin_project_image import router as admin_project_images
+from app.routes.blockchain.marketplace import router as marketplace_router
+from app.routes.token import router as token_router
 
 app = FastAPI(
     title="DepFund API",
@@ -78,4 +80,25 @@ api_v1.include_router(admin_project_document)
 api_v1.include_router(admin_project_images)
 
 app.include_router(health_router)
-app.include_router(api_v1)
+app.include_router(auth_router)
+app.include_router(oauth_router)
+app.include_router(users_router)
+app.include_router(standard_user_project_router)
+app.include_router(standard_user_category_router)
+app.include_router(standard_project_advance)
+app.include_router(standard_project_document)
+app.include_router(standard_project_image)
+app.include_router(wallet_router)
+app.include_router(marketplace_router)
+app.include_router(token_router)
+
+# admin
+app.include_router(admin_auth_router)
+app.include_router(admin_router)
+app.include_router(admin_role)
+app.include_router(admin_permission)
+app.include_router(admin_project_router)
+app.include_router(admin_category_router)
+app.include_router(admin_project_advance)
+app.include_router(admin_project_document)
+app.include_router(admin_project_images)
