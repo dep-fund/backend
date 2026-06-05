@@ -64,23 +64,24 @@ else
   echo "  ⚠️  Directorio ./secrets/ no encontrado. Secrets no actualizados."
 fi
 
-# ─── 6. Apply manifests ──────────────────────
+# ─── 6. Limpiar ingress legacy ───────────────
+echo "▸ Eliminar ingress legacy (ahora lo gestiona Terraform)"
+kubectl delete ingress depfund-ingress -n "${NAMESPACE}" --ignore-not-found
+
+# ─── 7. Apply manifests ──────────────────────
 echo "▸ Apply manifests"
 kubectl apply -f "${ROOT_DIR}/kubernetes/configmap.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/deployment.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/service.yaml"
-kubectl apply -f "${ROOT_DIR}/kubernetes/ingress.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/hpa.yaml"
 
-# ─── 7. Rollout ──────────────────────────────
+# ─── 8. Rollout ──────────────────────────────
 echo "▸ Esperar rollout..."
 kubectl rollout status deployment/depfund-backend -n "${NAMESPACE}" --timeout=5m
 
-# ─── 8. IP ────────────────────────────────────
-IP=$(kubectl get ingress depfund-ingress -n "${NAMESPACE}" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pendiente")
+# ─── 9. IP ────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  Deploy completado ✅"
-echo "  IP: ${IP}"
-echo "  Health: curl -s http://${IP}/health"
+echo "  LB IP: Ejecutar 'tofu output lb_ip_address' desde infrastructure/environments/prod"
 echo "═══════════════════════════════════════════"

@@ -19,7 +19,7 @@ data:
   FACTORY_ADDRESS: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
   PLATFORM_ADDRESS: "0x2560d5b0CDe93D618425FadfC9F5511e8730Af90"
   LOG_SQL_QUERIES: "0"
-  GOOGLE_REDIRECT_URI: "http://LOAD_BALANCER_IP/auth/google/callback"
+  GOOGLE_REDIRECT_URI: "http://LOAD_BALANCER_IP/api/auth/google/callback"
   GOOGLE_AUTH_URL: "https://accounts.google.com/o/oauth2/v2/auth"
   GOOGLE_TOKEN_URL: "https://accounts.google.com/o/oauth2/token"
   GOOGLE_USERINFO_URL: "https://www.googleapis.com/oauth2/v3/userinfo"

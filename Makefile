@@ -47,6 +47,9 @@ infra-apply:
 infra-destroy:
 	cd ${TOFU_DIR} && tofu destroy
 
+infra-output:
+	cd ${TOFU_DIR} && tofu output
+
 
 # ─────────────────────────────────────────────
 # Variables GCP/GKE
@@ -110,14 +113,14 @@ gke-secrets:
 # ─────────────────────────────────────────────
 
 gke-deploy:
+	kubectl delete ingress depfund-ingress -n ${NAMESPACE} --ignore-not-found; \
 	kubectl apply -f kubernetes/configmap.yaml; \
 	kubectl apply -f kubernetes/deployment.yaml; \
 	kubectl apply -f kubernetes/service.yaml; \
-	kubectl apply -f kubernetes/ingress.yaml; \
 	kubectl apply -f kubernetes/hpa.yaml; \
 	kubectl rollout status deployment/depfund-backend -n ${NAMESPACE} --timeout=5m; \
-	IP=$$(kubectl get ingress depfund-ingress -n ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null); \
-	echo "IP: $$IP — curl -s http://$$IP/health"
+	IP=$$(tofu -chdir=infrastructure/environments/prod output -raw lb_ip_address 2>/dev/null || echo "run 'make infra-output'"); \
+	echo "LB IP: $$IP — curl -s http://$$IP/health"
 
 
 # ─────────────────────────────────────────────

@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     )
     GOOGLE_REDIRECT_URI: str = _read_secret(
         "google_redirect_uri",
-        os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback"),
+        os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback"),
     )
     CLOUDINARY_CLOUD_NAME: str = _read_secret(
         "cloudinary_cloud_name", os.getenv("CLOUDINARY_CLOUD_NAME", "")

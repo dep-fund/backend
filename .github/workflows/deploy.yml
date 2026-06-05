@@ -66,17 +66,21 @@ jobs:
             --from-literal=DEPLOYER_PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" \
             | kubectl apply -f -
 
-      - name: Update ConfigMap with correct values
+      - name: Remove legacy ingress (now managed by Terraform)
         run: |
-          LOAD_BALANCER_IP=$(kubectl get ingress depfund-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "PENDING")
-          sed -i "s/LOAD_BALANCER_IP/$LOAD_BALANCER_IP/g" kubernetes/configmap.yaml
+          kubectl delete ingress depfund-ingress -n $NAMESPACE --ignore-not-found
+
+      - name: Update ConfigMap with LB IP
+        run: |
+          LB_IP=$(gcloud compute addresses describe prod-depfund-ingress-ip \
+            --global --format="value(address)" 2>/dev/null || echo "PENDING")
+          sed -i "s/LOAD_BALANCER_IP/$LB_IP/g" kubernetes/configmap.yaml
 
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f kubernetes/configmap.yaml
           kubectl apply -f kubernetes/deployment.yaml
           kubectl apply -f kubernetes/service.yaml
-          kubectl apply -f kubernetes/ingress.yaml
           kubectl apply -f kubernetes/hpa.yaml
           kubectl apply -f kubernetes/backup-cronjob.yaml
 
@@ -88,10 +92,5 @@ jobs:
         run: |
           echo "Waiting for load balancer..."
           sleep 30
-          IP=$(kubectl get ingress depfund-ingress -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          if [ -n "$IP" ] && [ "$IP" != "null" ]; then
-            echo "Load balancer IP: $IP"
-            curl -sI "http://$IP/health" || echo "Health check failed (may still be provisioning)"
-          else
-            echo "Load balancer IP not ready yet—run later: kubectl get ingress -n $NAMESPACE"
-          fi
+          echo "Run 'tofu output lb_ip_address' from infrastructure/environments/prod to get the LB IP"
+          curl -sI "http://$(tofu -chdir=infrastructure/environments/prod output -raw lb_ip_address)/health" || echo "Health check failed (may still be provisioning)"

@@ -17,3 +17,19 @@ output "network_name" {
 output "ingress_static_ip" {
   value = google_compute_global_address.ingress_ip.address
 }
+
+output "frontend_bucket_name" {
+  value = module.frontend_buckets.frontend_bucket_name
+}
+
+output "backoffice_bucket_name" {
+  value = module.frontend_buckets.backoffice_bucket_name
+}
+
+output "lb_url_map" {
+  value = module.lb.url_map_name
+}
+
+output "lb_ip_address" {
+  value = module.lb.lb_ip_address
+}

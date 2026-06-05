@@ -5,6 +5,8 @@ metadata:
   namespace: depfund
   labels:
     app: depfund-backend
+  annotations:
+    cloud.google.com/neg: '{"exposed_ports": {"8000":{}}}'
 spec:
   type: ClusterIP
   ports:

@@ -54,3 +54,22 @@ module "iam" {
   cluster_sa   = module.gke.cluster_sa
   depends_on   = [module.gke]
 }
+
+module "frontend_buckets" {
+  source       = "../../modules/frontend-buckets"
+  project_id   = var.gcp_project_id
+  environment  = var.environment
+  location     = var.gcp_region
+  cors_origins = ["*"]
+}
+
+module "lb" {
+  source                = "../../modules/lb"
+  project_id            = var.gcp_project_id
+  environment           = var.environment
+  frontend_bucket_name  = module.frontend_buckets.frontend_bucket_name
+  backoffice_bucket_name = module.frontend_buckets.backoffice_bucket_name
+  backend_neg_id        = var.backend_neg_id
+  static_ip_name        = google_compute_global_address.ingress_ip.name
+  depends_on            = [module.frontend_buckets]
+}

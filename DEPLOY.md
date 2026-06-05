@@ -5,13 +5,16 @@
 1. [Prerrequisitos](#1-prerrequisitos)
 2. [Configuración inicial de GCP](#2-configuración-inicial-de-gcp)
 3. [Workload Identity Federation (GitHub ↔ GCP)](#3-workload-identity-federation-github--gcp)
-4. [OpenTofu — Infraestructura](#4-opentofu--infraestructura)
-5. [GitHub Actions — Variables y Secrets](#5-github-actions--variables-y-secrets)
-6. [Despliegue de la aplicación](#6-despliegue-de-la-aplicación)
-7. [Verificación](#7-verificación)
-8. [Scripts de backup](#8-scripts-de-backup)
-9. [Teardown](#9-teardown)
-10. [Anexo: Comandos rápidos](#10-anexo-comandos-rápidos)
+4. [Arquitectura de red](#4-arquitectura-de-red)
+5. [OpenTofu — Infraestructura](#5-opentofu--infraestructura)
+6. [Frontend — Deploy a GCS](#6-frontend--deploy-a-gcs)
+7. [GitHub Actions — Variables y Secrets](#7-github-actions--variables-y-secrets)
+8. [Despliegue del backend](#8-despliegue-del-backend)
+9. [Verificación](#9-verificación)
+10. [Scripts de backup](#10-scripts-de-backup)
+11. [Teardown](#11-teardown)
+12. [Anexo: Comandos rápidos](#12-anexo-comandos-rápidos)
+13. [Costos estimados](#13-costos-estimados)
 
 ---
 
@@ -184,9 +187,34 @@ echo "GCP_SERVICE_ACCOUNT:    $SA_EMAIL"
 
 ---
 
-## 4. OpenTofu — Infraestructura
+## 4. Arquitectura de red
 
-### 4.1 Configurar variables
+DepFund usa un **único Load Balancer HTTP** gestionado por OpenTofu que rutea según la URL:
+
+| Ruta | Destino | Descripción |
+|---|---|---|
+| `/*` | Frontend GCS bucket | SPA pública (catch-all) |
+| `/admin/*` | Backoffice GCS bucket | Panel admin SPA |
+| `/api/*` | Backend GKE (vía NEG) | API REST |
+| `/docs`, `/openapi.json`, `/redoc` | Backend GKE | Documentación Swagger |
+| `/health` | Backend GKE | Health check |
+
+### 4.1 Flujo de tráfico
+
+```
+Usuario → LB (IP estática global)
+         ├── /*        → GCS bucket: prod-depfund-frontend
+         ├── /admin/*  → GCS bucket: prod-depfund-backoffice
+         └── /api/*    → GKE NEG → backend pods (puerto 8000)
+```
+
+> El **GKE Ingress anterior** fue reemplazado por este LB. Ver sección de migración.
+
+---
+
+## 5. OpenTofu — Infraestructura
+
+### 5.1 Configurar variables
 
 El archivo `infrastructure/environments/prod/terraform.tfvars` ya está configurado:
 
@@ -197,7 +225,7 @@ environment    = "prod"
 subnet_cidr    = "10.0.0.0/20"
 ```
 
-### 4.2 Inicializar y aplicar
+### 5.2 Inicializar y aplicar
 
 ```bash
 cd infrastructure/environments/prod
@@ -212,11 +240,48 @@ Esto crea:
 - GKE Standard cluster (1 nodo spot `e2-small`, autoescala hasta 3)
 - Artifact Registry repository (docker images)
 - GCS bucket para backups
+- **GCS buckets para frontend y backoffice** (públicos, static website)
+- **HTTP Load Balancer** (reemplaza el GKE ingress, usa la IP estática existente)
 - Service Accounts (cluster SA + backup SA)
 
 El `apply` tarda **~5-8 minutos**.
 
-### 4.3 Conectarse al cluster
+> **Nota:** El módulo LB necesita el `backend_neg_id` (self-link del NEG de GKE).
+> Si es la primera vez, aplicá primero sin el LB, agregá la annotation al service,
+> obtené el NEG, y luego aplicá con el valor.
+
+### 5.3 Configurar el NEG de GKE (Network Endpoint Group)
+
+El LB enruta al backend GKE mediante un NEG creado automáticamente por la annotation
+`cloud.google.com/neg` en el Service. Es un paso único.
+
+```bash
+# 1. Aplicar el service con la annotation
+kubectl apply -f kubernetes/service.yaml
+
+# 2. Esperar a que GKE cree el NEG
+sleep 15
+
+# 3. Obtener el nombre del NEG
+gcloud compute network-endpoint-groups list \
+  --project depfund-498022-d7
+
+# 4. Copiar el self_link del NEG (formato: projects/.../zones/.../networkEndpointGroups/k8s1-...)
+#    y pasarlo como variable backend_neg_id al aplicar tofu
+cd infrastructure/environments/prod
+tofu apply -var="backend_neg_id=projects/.../zones/.../networkEndpointGroups/k8s1-..."
+```
+
+### 5.4 Outputs útiles
+
+```bash
+make infra-output
+# lb_ip_address       → IP del LB
+# frontend_bucket_name → prod-depfund-frontend
+# backoffice_bucket_name → prod-depfund-backoffice
+```
+
+### 5.5 Conectarse al cluster
 
 ```bash
 gcloud container clusters get-credentials prod-depfund-cluster \
@@ -226,9 +291,40 @@ gcloud container clusters get-credentials prod-depfund-cluster \
 
 ---
 
-## 5. GitHub Actions — Variables y Secrets
+## 6. Frontend — Deploy a GCS
 
-### 5.1 Repository Variables
+Cada frontend se buildea localmente y se sincroniza con su bucket GCS.
+El bucket sirve como static website y el LB lo expone al público.
+
+### 6.1 Manual (script)
+
+```bash
+# Frontend público
+cd frontend
+./scripts/deploy.sh
+
+# Backoffice
+cd backoffice
+./scripts/deploy.sh
+```
+
+### 6.2 GitHub Actions (manual dispatch)
+
+Desde GitHub → Actions → "Deploy Frontend to GCS" o "Deploy Backoffice to GCS",
+elegí `workflow_dispatch` y el entorno.
+
+**Variables de entorno requeridas en GitHub:**
+- `FRONTEND_API_URL` — URL del backend para el frontend público (ej: `http://LB_IP/api`)
+- `BACKOFFICE_API_URL` — URL del backend para el backoffice (ej: `http://LB_IP/api`)
+
+> El prefijo `/api` se agrega automáticamente al `VITE_API_URL` de cada frontend.
+> Ver [Arquitectura de red](#4-arquitectura-de-red).
+
+---
+
+## 7. GitHub Actions — Variables y Secrets
+
+### 7.1 Repository Variables
 
 En GitHub: **Settings → Secrets and variables → Actions → Variables**
 
@@ -237,15 +333,17 @@ En GitHub: **Settings → Secrets and variables → Actions → Variables**
 | `GCP_PROJECT_ID` | `depfund-498022-d7` |
 | `GCP_WIF_PROVIDER` | (lo obtuviste en 3.4) |
 | `GCP_SERVICE_ACCOUNT` | `github-actions-deploy@depfund-498022-d7.iam.gserviceaccount.com` |
+| `FRONTEND_API_URL` | `http://LB_IP/api` (IP del LB) |
+| `BACKOFFICE_API_URL` | `http://LB_IP/api` (misma IP) |
 
-### 5.2 Repository Secrets
+### 7.2 Repository Secrets
 
 En GitHub: **Settings → Secrets and variables → Actions → Secrets**
 
 | Secret | Descripción |
 |---|---|
 | `POSTGRES_USER` | `neondb_owner` |
-| `POSTGRES_PASSWORD` | `npg_nk8gzJmIYei1` |
+| `POSTGRES_PASSWORD` | Connection string password |
 | `SECRET_KEY` | JWT secret key (generar: `openssl rand -hex 32`) |
 | `ADMIN_SECRET_KEY` | Admin guard key |
 | `SENDER_PASSWORD` | Gmail App Password |
@@ -256,7 +354,7 @@ En GitHub: **Settings → Secrets and variables → Actions → Secrets**
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
 | `DEPLOYER_PRIVATE_KEY` | Private key del deployer blockchain |
 
-### 5.3 ConfigMap values
+### 7.3 ConfigMap values
 
 Antes del primer deploy, editá `kubernetes/configmap.yaml` con los valores correctos que no sean secretos:
 
@@ -270,9 +368,9 @@ Antes del primer deploy, editá `kubernetes/configmap.yaml` con los valores corr
 
 ---
 
-## 6. Despliegue de la aplicación
+## 8. Despliegue del backend
 
-### 6.1 Local (recomendado)
+### 8.1 Local (recomendado)
 
 Un solo comando build + push + secrets + deploy:
 
@@ -291,7 +389,7 @@ make gke-deploy         # aplicar manifests + rollout
 
 El script `scripts/deploy.sh` hace lo mismo en un solo archivo.
 
-### 6.2 Automático (GitHub Actions — opcional)
+### 8.2 Automático (GitHub Actions — opcional)
 
 Cuando configures el Workload Identity Federation y los secrets en GitHub, al hacer push a `main` se dispara:
 
@@ -301,35 +399,58 @@ CI (test + lint) → Build & Push (Artifact Registry) → Deploy (GKE)
 
 ---
 
-## 7. Verificación
+## 9. Verificación
 
-### 7.1 Obtener IP del Load Balancer
+### 9.1 Obtener IP del Load Balancer
 
 ```bash
-kubectl get ingress depfund-ingress -n depfund
+make infra-output
+# lb_ip_address = "X.X.X.X"
+```
 
-# Si querés solo la IP:
-IP=$(kubectl get ingress depfund-ingress -n depfund \
-  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-echo $IP
+O directamente:
+
+```bash
+gcloud compute addresses describe prod-depfund-ingress-ip \
+  --global --format="value(address)"
 ```
 
 > La primera vez puede tardar **2-5 minutos** en que GCP provisione el Load Balancer.
 
-### 7.2 Testear health
+### 9.2 Probar frontends
 
 ```bash
-curl -sI http://$IP/health
+LB_IP=$(gcloud compute addresses describe prod-depfund-ingress-ip --global --format="value(address)")
+
+# Frontend público
+curl -sI http://$LB_IP/ | head -1
+# → HTTP/1.1 200 OK
+
+# Backoffice
+curl -sI http://$LB_IP/admin/ | head -1
+# → HTTP/1.1 200 OK
+
+# API (health check)
+curl -s http://$LB_IP/health
+# → {"status":"ok"}
+```
+
+```bash
+### 9.3 Testear health
+
+```bash
+LB_IP=$(gcloud compute addresses describe prod-depfund-ingress-ip --global --format="value(address)")
+curl -sI http://$LB_IP/health
 # → HTTP/1.1 200 OK
 ```
 
-### 7.3 Logs del backend
+### 9.4 Logs del backend
 
 ```bash
 kubectl logs -n depfund -l app=depfund-backend --tail=50 -f
 ```
 
-### 7.4 Escalar manualmente (si hace falta)
+### 9.5 Escalar manualmente (si hace falta)
 
 ```bash
 kubectl scale deployment/depfund-backend -n depfund --replicas=3
@@ -337,9 +458,9 @@ kubectl scale deployment/depfund-backend -n depfund --replicas=3
 
 ---
 
-## 8. Scripts de backup
+## 10. Scripts de backup
 
-### 8.1 Backup manual
+### 10.1 Backup manual
 
 ```bash
 # Configurar variables de entorno
@@ -356,7 +477,7 @@ export CLOUDINARY_API_SECRET="..."
 ./scripts/backup.sh
 ```
 
-### 8.2 Backup automático (CronJob en K8s)
+### 10.2 Backup automático (CronJob en K8s)
 
 El CronJob en `kubernetes/backup-cronjob.yaml` corre automáticamente:
 - **Schedule**: Domingo 3:00 AM UTC
@@ -365,7 +486,7 @@ El CronJob en `kubernetes/backup-cronjob.yaml` corre automáticamente:
 
 Los dumps se borran del bucket después de **30 días** (lifecycle rule configurada en OpenTofu).
 
-### 8.3 Restaurar desde backup
+### 10.3 Restaurar desde backup
 
 ```bash
 # Listar backups disponibles
@@ -383,11 +504,11 @@ pg_restore -h $TARGET_HOST -U $TARGET_USER -d $TARGET_DB \
 
 ---
 
-## 9. Teardown
+## 11. Teardown
 
 Cuando termines las pruebas, destruí todo para no generar costos:
 
-### 9.1 Destruir infraestructura
+### 11.1 Destruir infraestructura
 
 ```bash
 cd infrastructure/environments/prod
@@ -398,7 +519,7 @@ Esto elimina: GKE cluster, VPC, NAT, firewall rules, Artifact Registry, GCS buck
 
 > El bucket de backups se elimina **solo si está vacío**. Si tiene datos, vacialo primero o borralo manualmente desde la consola.
 
-### 9.2 Eliminar proyecto (opcional, nuclear)
+### 11.2 Eliminar proyecto (opcional, nuclear)
 
 ```bash
 gcloud projects delete $(gcloud config get project)
@@ -406,7 +527,7 @@ gcloud projects delete $(gcloud config get project)
 
 ---
 
-## 10. Anexo: Comandos rápidos
+## 12. Anexo: Comandos rápidos
 
 ```bash
 # ─── Infra ──────────────────────────────────────
@@ -414,15 +535,29 @@ make infra-init          # tofu init
 make infra-plan          # tofu plan
 make infra-apply         # tofu apply
 make infra-destroy       # tofu destroy
+make infra-output        # tofu output (LB IP, buckets, etc.)
+
+# ─── Backend (GKE) ──────────────────────────────
+make gke-connect         # conectar al cluster
+make gke-build           # build + push docker image
+make gke-secrets         # inyectar secrets desde ./secrets/
+make gke-deploy          # aplicar manifests + rollout
+make gke-all             # ciclo completo: connect → build → secrets → deploy
+make gke-logs            # logs del backend
+make gke-logs-migrate    # logs de migración alembic
+
+# ─── Frontend (GCS) ─────────────────────────────
+cd frontend && ./scripts/deploy.sh     # deploy manual frontend
+cd backoffice && ./scripts/deploy.sh   # deploy manual backoffice
 
 # ─── K8s ────────────────────────────────────────
-make k8s-apply           # kubectl apply -f kubernetes/
-make k8s-delete          # borra namespace depfund
+kubectl get pods -n depfund             # ver pods
+kubectl delete namespace depfund        # borrar todo
+kubectl get events -n depfund --sort-by=.lastTimestamp
 
-# ─── GKE ────────────────────────────────────────
-gcloud container clusters get-credentials prod-depfund-cluster \
-  --region us-central1 \
-  --project depfund-prod
+# ─── LB ─────────────────────────────────────────
+gcloud compute addresses describe prod-depfund-ingress-ip --global
+make infra-output    # lb_ip_address
 
 # ─── Logs ──────────────────────────────────────
 kubectl logs -n depfund -l app=depfund-backend -f
@@ -433,22 +568,26 @@ pytest app/tests/ -v                              # tests locales
 
 ---
 
-## Costos estimados (GCP)
+## 13. Costos estimados (GCP)
 
 | Recurso | Costo aprox |
 |---|---|
 | GKE Standard (1 nodo spot `e2-small`) | ~$9/mes |
 | Cloud NAT | ~$5/mes |
+| Global HTTP LB + forwarding rule | ~$19/mes |
 | Artifact Registry (1 imagen) | ~$0.50/mes |
-| GCS Backups (pocos GB) | ~$1/mes |
-| **Total estimado** | **~$16/mes** |
+| GCS Backups + Frontend Buckets (pocos GB) | ~$1/mes |
+| **Total estimado** | **~$35/mes** |
 
 Si el cluster se usa **solo para pruebas/presentaciones**, hacé `tofu destroy` cuando no lo uses y solo pagás por el storage (GCS + Artifact Registry ≈ $1-2/mes).
 
 ---
 
 > **Próximos pasos recomendados** (cuando hagan falta):
+> - [x] Migrar frontends de Vercel a GCP (GCS + LB unificado)
 > - [ ] Agregar un dominio y TLS (cert-manager + Cloud DNS)
 > - [ ] Migrar secrets a GCP Secret Manager + External Secrets Operator
+> - [ ] Migrar DB de Neon a Cloud SQL (ver `infrastructure/modules/cloudsql/`)
+> - [ ] Migrar archivos de Cloudinary a GCS (ver `infrastructure/modules/uploads/`)
 > - [ ] Agregar entorno `staging`
 > - [ ] Implementar azul/verde (blue-green deployment)
