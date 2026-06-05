@@ -62,5 +62,7 @@ class ProjectResponse(BaseModel):
     roi: Optional[Decimal] = None
     annual_benefits: Optional[Decimal] = None
     suffix: Optional[str] = None
+    dividend_address: Optional[str] = None
+    offering_address: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
