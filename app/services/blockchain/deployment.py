@@ -36,7 +36,7 @@ class DeploymentReader:
             ),
             "marketplace_address": cls._find_contract(
                 deploy_data,
-                "Marketplace.sol\\Marketplace",
+                "Marketplace",
             ),
             "usdc_address": cls._find_contract(
                 usdc_data,
