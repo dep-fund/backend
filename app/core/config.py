@@ -10,7 +10,7 @@ def _read_secret(name: str, fallback: str = "") -> str:
     env_name = name.upper()
     if os.getenv(env_name):
         return os.environ[env_name]
-        
+
     secret_path = Path(f"/run/secrets/{name}")
     if secret_path.exists():
         return secret_path.read_text().strip()
@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     PLATFORM_ADDRESS: str = os.getenv(
         "PLATFORM_ADDRESS", "0x2560d5b0CDe93D618425FadfC9F5511e8730Af90"
     )
+    PROJECT_TOKEN_SUPPLY: int = 1_000_000
+    OFFERING_DEADLINE_SECONDS: int = 7_776_000
 
     POSTGRES_USER: str = _read_secret(
         "postgres_user", os.getenv("POSTGRES_USER", "postgres")
