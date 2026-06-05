@@ -1,6 +1,6 @@
 from decimal import Decimal
 from app.services.blockchain.base_contract_service import BaseContractService
-from app.services.blockchain.deployment import DeploymentReader
+from app.services.blockchain.deployment import DeploymentReaderProduction
 from app.core.config import settings
 import time
 
@@ -16,7 +16,8 @@ class OfferingService(BaseContractService):
         token_price: Decimal,
         deadline_seconds: int,
     ) -> str:
-        addresses = DeploymentReader.get_addresses()
+        # addresses = DeploymentReader.get_addresses()
+        addresses = DeploymentReaderProduction.get_addresses()
         deadline = int(time.time()) + deadline_seconds
 
         address = self.client.deploy_contract(

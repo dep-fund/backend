@@ -1,5 +1,5 @@
 from app.services.blockchain.base_contract_service import BaseContractService
-from app.services.blockchain.deployment import DeploymentReader
+from app.services.blockchain.deployment import DeploymentReaderProduction
 from app.core.config import settings
 
 
@@ -7,11 +7,13 @@ class DpfTokenService(BaseContractService):
     contract_name = "DpfFactory"
 
     def __init__(self):
-        address = DeploymentReader.get_addresses()["factory_address"]
+        # address = DeploymentReader.get_addresses()["factory_address"]
+        address = DeploymentReaderProduction.get_addresses()["factory_address"]
         super().__init__(address=address)
 
     def create_project_token(self, name: str, suffix: str, supply: int) -> str:
-        addresses = DeploymentReader.get_addresses()
+        # addresses = DeploymentReader.get_addresses()
+        addresses = DeploymentReaderProduction.get_addresses()
         receipt = self.transact(
             "createProjectToken",
             name,

@@ -28,3 +28,15 @@ prod-down:
 
 prod-down-v:
 	docker compose down -v
+
+# --- Blockchain ABIs ---
+ 
+sync-abis:
+	python sync_abis.py
+ 
+sync-abis-custom:
+	python sync_abis.py --blockchain-out $(BLOCKCHAIN_OUT)
+ 
+# Ejemplo de uso con path custom:
+#   make sync-abis-custom BLOCKCHAIN_OUT=/ruta/a/blockchain/out
+ 

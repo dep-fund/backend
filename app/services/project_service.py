@@ -272,6 +272,10 @@ class ProjectService:
                 project_id=project_id,
                 total_supply=Decimal(settings.PROJECT_TOKEN_SUPPLY),
             )
+            print("Deployed, Addresses: ")
+            print("TOKEN: ", token_address)
+            print("OFFERING: ", offering_address)
+            print("DIVIDEND: ", dividend_address)
         else:
             project.state = ProjectState.REJECTED
             new_state = ProjectState.REJECTED
