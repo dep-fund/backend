@@ -5,6 +5,9 @@ from sqlalchemy import Numeric, String, DateTime, ForeignKey, Text, Enum as SAEn
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from app.core.database import Base
+
+from app.core.enums import RiskLevel
+
 import uuid
 
 from app.core.enums import ProjectState
@@ -22,6 +25,8 @@ from app.models.project_document import ProjectDocument
 from app.models.project_advance import ProjectAdvance
 
 
+
+
 class Project(Base):
     __tablename__ = "PROJECT"
 
@@ -36,6 +41,34 @@ class Project(Base):
         nullable=False,
         default=ProjectState.PENDING,
     )
+    min_amount: Mapped[Decimal | None] = mapped_column(
+    Numeric(12, 2), nullable=True
+    )
+
+    risk: Mapped[RiskLevel | None] = mapped_column(
+        SAEnum(RiskLevel, name="risk_level"),
+        nullable=True
+    )
+
+    annual_expenses: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2), nullable=True
+    )
+
+    annual_gross_profit: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2), nullable=True
+    )
+
+    roi: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2), nullable=True
+    )
+
+    annual_benefits: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2), nullable=True
+    )
+    
+    
+    suffix: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
     ubication: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
