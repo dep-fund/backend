@@ -5,8 +5,9 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.core.enums import ProjectState,RiskLevel
+from app.core.enums import ProjectState, RiskLevel
 from app.schemas.category import CategoryResponse
+
 
 class ProjectCreateRequest(BaseModel):
     name: str
@@ -17,6 +18,7 @@ class ProjectCreateRequest(BaseModel):
     min_amount: Optional[Decimal] = None
     annual_expenses: Optional[Decimal] = None
     annual_gross_profit: Optional[Decimal] = None
+    estimated_development_days: int
     suffix: Optional[str] = Field(None, min_length=3, max_length=50)
 
 
@@ -28,6 +30,7 @@ class ProjectUpdateRequest(BaseModel):
     annual_expenses: Optional[Decimal] = None
     annual_gross_profit: Optional[Decimal] = None
 
+
 class ProjectUpdateAdminRequest(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -38,7 +41,6 @@ class ProjectUpdateAdminRequest(BaseModel):
 
 class ProjectRejectRequest(BaseModel):
     reason: str
-
 
 
 class ProjectResponse(BaseModel):
@@ -60,11 +62,4 @@ class ProjectResponse(BaseModel):
     annual_benefits: Optional[Decimal] = None
     suffix: Optional[str] = None
 
-    model_config = ConfigDict(from_attributes=True)    
-    
-    
-    
-    
-    
-    
-    
+    model_config = ConfigDict(from_attributes=True)

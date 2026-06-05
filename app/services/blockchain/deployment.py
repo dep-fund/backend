@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
+from web3 import Web3
+
 
 class DeploymentReader:
-    DEPLOY_PATH = Path(
-        "/blockchain/broadcast/Deploy.s.sol/31337/run-latest.json"
-    )
+    DEPLOY_PATH = Path("/blockchain/broadcast/Deploy.s.sol/31337/run-latest.json")
 
     USDC_DEPLOY_PATH = Path(
         "/blockchain/broadcast/DeployMockUSDC.s.sol/31337/run-latest.json"
@@ -30,20 +30,16 @@ class DeploymentReader:
         usdc_data = cls._load(cls.USDC_DEPLOY_PATH)
 
         return {
-            "factory_address": cls._find_contract(
-                deploy_data,
-                "DpfFactory.sol\\DpfFactory",
+            "factory_address": Web3.to_checksum_address(
+                cls._find_contract(deploy_data, "DpfFactory")
             ),
-            "marketplace_address": cls._find_contract(
-                deploy_data,
-                "Marketplace",
+            "marketplace_address": Web3.to_checksum_address(
+                cls._find_contract(deploy_data, "Marketplace")
             ),
-            "usdc_address": cls._find_contract(
-                usdc_data,
-                "MockUSDC.sol\\MockUSDC",
+            "usdc_address": Web3.to_checksum_address(
+                cls._find_contract(usdc_data, "MockUSDC")
             ),
-            "offering_address": cls._find_contract(
-                deploy_data,
-                "Offering",
+            "offering_address": Web3.to_checksum_address(
+                cls._find_contract(deploy_data, "Offering")
             ),
         }
