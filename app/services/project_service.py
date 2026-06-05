@@ -14,7 +14,7 @@ from app.schemas.project import (
     ProjectCreateRequest,
     ProjectUpdateRequest,
     ProjectResponse,
-    ProjectUpdateAdminRequest
+    ProjectUpdateAdminRequest,
 )
 
 from app.exceptions.project import (
@@ -65,11 +65,9 @@ class ProjectService:
         return total or 0, [ProjectResponse.model_validate(p) for p in projects]
 
     async def create(
-        
         self,
         user_id: UUID,
-        data: ProjectCreateRequest
-    ,
+        data: ProjectCreateRequest,
     ) -> ProjectResponse:
         existing_name = await self.session.scalar(
             select(Project).where(Project.name == data.name)
@@ -92,7 +90,7 @@ class ProjectService:
 
         annual_benefits = None
         roi = None
-        
+
         if data.annual_gross_profit is not None and data.annual_expenses is not None:
             annual_benefits = data.annual_gross_profit - data.annual_expenses
             if data.total_amount and data.total_amount > 0:
@@ -110,10 +108,6 @@ class ProjectService:
             roi=roi,
             suffix=data.suffix,
             user_id=user_id,
-            suffix=data.suffix,
-            min_amount=data.min_amount,
-            annual_expenses=data.annual_expenses,
-            annual_gross_profit=data.annual_gross_profit,
             estimated_development_days=data.estimated_development_days,
         )
 
@@ -129,7 +123,6 @@ class ProjectService:
 
         project = await self._get_project(project.id)
         return ProjectResponse.model_validate(project)
-
 
     async def update(
         self,
@@ -154,10 +147,9 @@ class ProjectService:
 
         await self.session.commit()
         await self.session.refresh(project)
-        
+
         project = await self._get_project(project.id)
         return ProjectResponse.model_validate(project)
-
 
     async def update_by_admin(
         self,
