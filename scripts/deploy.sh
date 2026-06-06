@@ -33,12 +33,7 @@ echo "▸ Push a Artifact Registry"
 docker push "${REPO}/${IMAGE}:${TAG}"
 docker push "${REPO}/${IMAGE}:latest"
 
-# ─── 3. Actualizar deployment.yaml ────────────
-echo "▸ Actualizar imagen en el manifest"
-sed -i "s|image:.*${REPO}/${IMAGE}:.*|image: ${REPO}/${IMAGE}:${TAG}|" "${ROOT_DIR}/kubernetes/deployment.yaml"
-sed -i "s|image:.*${REPO}/${IMAGE}:.*|image: ${REPO}/${IMAGE}:${TAG}|" "${ROOT_DIR}/kubernetes/deployment.yaml"
-
-# ─── 4. Namespace ─────────────────────────────
+# ─── 3. Namespace ─────────────────────────────
 echo "▸ Namespace"
 kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -64,22 +59,18 @@ else
   echo "  ⚠️  Directorio ./secrets/ no encontrado. Secrets no actualizados."
 fi
 
-# ─── 6. Limpiar ingress legacy ───────────────
-echo "▸ Eliminar ingress legacy (ahora lo gestiona Terraform)"
-kubectl delete ingress depfund-ingress -n "${NAMESPACE}" --ignore-not-found
-
-# ─── 7. Apply manifests ──────────────────────
+# ─── 6. Apply manifests ──────────────────────
 echo "▸ Apply manifests"
 kubectl apply -f "${ROOT_DIR}/kubernetes/configmap.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/deployment.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/service.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/hpa.yaml"
 
-# ─── 8. Rollout ──────────────────────────────
+# ─── 7. Rollout ──────────────────────────────
 echo "▸ Esperar rollout..."
 kubectl rollout status deployment/depfund-backend -n "${NAMESPACE}" --timeout=5m
 
-# ─── 9. IP ────────────────────────────────────
+# ─── 8. IP ────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  Deploy completado ✅"

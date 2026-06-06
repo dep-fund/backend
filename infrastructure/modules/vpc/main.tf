@@ -22,22 +22,6 @@ resource "google_compute_subnetwork" "subnet" {
   }
 }
 
-resource "google_compute_router" "router" {
-  project = var.project_id
-  name    = "${var.vpc_name}-router"
-  region  = var.region
-  network = google_compute_network.vpc.id
-}
-
-resource "google_compute_router_nat" "nat" {
-  project                            = var.project_id
-  name                               = "${var.vpc_name}-nat"
-  region                             = var.region
-  router                             = google_compute_router.router.name
-  nat_ip_allocate_option             = "AUTO_ONLY"
-  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-}
-
 resource "google_compute_firewall" "allow_internal" {
   project     = var.project_id
   name        = "${var.vpc_name}-allow-internal"

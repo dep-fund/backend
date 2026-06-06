@@ -29,6 +29,7 @@ module "gke" {
   source     = "../../modules/gke"
   project_id = var.gcp_project_id
   region     = var.gcp_region
+  zone       = var.gcp_zone
   cluster_name = "${var.environment}-depfund-cluster"
   network    = module.vpc.network_id
   subnet     = module.vpc.subnet_id
@@ -53,17 +54,6 @@ module "iam" {
   cluster_name = module.gke.cluster_name
   cluster_sa   = module.gke.cluster_sa
   depends_on   = [module.gke]
-}
-
-module "cloudsql" {
-  source       = "../../modules/cloudsql"
-  project_id   = var.gcp_project_id
-  region       = var.gcp_region
-  environment  = var.environment
-  network_id   = module.vpc.network_self_link
-  db_name      = "depfund"
-  db_user      = "depfund_app"
-  depends_on   = [module.vpc]
 }
 
 module "frontend_buckets" {

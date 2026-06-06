@@ -95,7 +95,7 @@ services:
       SENDER_EMAIL: depfund.soporte@gmail.com
       FRONTEND_URL: "http://localhost:5173"
       BACKOFFICE_URL: "http://localhost:5175"
-      RPC_URL: "https://base-sepolia.g.alchemy.com/v2/2Fu8fL0AXhGA4xO9c9TtD"
+      RPC_URL: ${RPC_URL:-https://base-sepolia.g.alchemy.com/v2/2Fu8fL0AXhGA4xO9c9TtD}
       FACTORY_ADDRESS: "0x72a804e91730D12221d99f6FB907682c932893a4"
       MARKETPLACE_ADDRESS: "0x2292E004e119b4Ec83bc689479EB9bF475AaFa0B"
       USDC_ADDRESS: "0x35ec429d8a88Dc666921AB7fE97e379Cd980F84E"

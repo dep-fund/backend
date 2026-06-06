@@ -1,0 +1,14 @@
+secrets/
+infrastructure/
+kubernetes/
+scripts/
+.github/
+.git/
+__pycache__/
+*.pyc
+.env
+.venv/
+*.md
+Makefile
+docker-compose*.yml
+pytest.ini

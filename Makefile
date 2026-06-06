@@ -69,7 +69,7 @@ CLUSTER    := prod-depfund-cluster
 
 gke-connect:
 	gcloud container clusters get-credentials ${CLUSTER} \
-		--region ${REGION} \
+		--zone us-central1-a \
 		--project ${PROJECT}
 
 
@@ -113,11 +113,11 @@ gke-secrets:
 # ─────────────────────────────────────────────
 
 gke-deploy:
-	kubectl delete ingress depfund-ingress -n ${NAMESPACE} --ignore-not-found; \
 	kubectl apply -f kubernetes/configmap.yaml; \
 	kubectl apply -f kubernetes/deployment.yaml; \
 	kubectl apply -f kubernetes/service.yaml; \
 	kubectl apply -f kubernetes/hpa.yaml; \
+	kubectl apply -f kubernetes/backup-cronjob.yaml; \
 	kubectl rollout status deployment/depfund-backend -n ${NAMESPACE} --timeout=5m; \
 	IP=$$(tofu -chdir=infrastructure/environments/prod output -raw lb_ip_address 2>/dev/null || echo "run 'make infra-output'"); \
 	echo "LB IP: $$IP — curl -s http://$$IP/health"

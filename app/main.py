@@ -67,6 +67,8 @@ api_v1.include_router(standard_project_advance)
 api_v1.include_router(standard_project_document)
 api_v1.include_router(standard_project_image)
 api_v1.include_router(wallet_router)
+api_v1.include_router(marketplace_router)
+api_v1.include_router(token_router)
 
 # admin
 api_v1.include_router(admin_auth_router)

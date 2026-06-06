@@ -9,6 +9,12 @@ variable "gcp_region" {
   default     = "us-central1"
 }
 
+variable "gcp_zone" {
+  description = "GCP zone (single zone for cost savings)"
+  type        = string
+  default     = "us-central1-a"
+}
+
 variable "environment" {
   description = "Environment name"
   type        = string

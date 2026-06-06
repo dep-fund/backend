@@ -8,7 +8,7 @@ resource "google_service_account" "gke_sa" {
 
 resource "google_container_cluster" "cluster" {
   project  = var.project_id
-  location = var.region
+  location = var.zone
   name     = var.cluster_name
 
   network    = var.network

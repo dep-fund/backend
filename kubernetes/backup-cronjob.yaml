@@ -36,15 +36,9 @@ spec:
                   echo "Backup completado: $(date)"
               env:
                 - name: PGHOST
-                  valueFrom:
-                    configMapKeyRef:
-                      name: depfund-config
-                      key: POSTGRES_HOST
+                  value: "ep-square-hill-an7t5zyb-pooler.c-6.us-east-1.aws.neon.tech"
                 - name: PGPORT
-                  valueFrom:
-                    configMapKeyRef:
-                      name: depfund-config
-                      key: POSTGRES_PORT
+                  value: "5432"
                 - name: PGDB
                   valueFrom:
                     configMapKeyRef:
