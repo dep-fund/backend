@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     FACTORY_ADDRESS: str = os.getenv("FACTORY_ADDRESS", "")
     MARKETPLACE_ADDRESS: str = os.getenv("MARKETPLACE_ADDRESS", "")
     USDC_ADDRESS: str = os.getenv("USDC_ADDRESS", "")
-    PROJECT_TOKEN_SUPPLY: int = 1_000_000
+    PROJECT_TOKEN_SUPPLY: int = 50_000
     OFFERING_DEADLINE_SECONDS: int = 7_776_000
 
     POSTGRES_USER: str = _read_secret(
