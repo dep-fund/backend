@@ -18,7 +18,7 @@ class DpfTokenService(BaseContractService):
             "createProjectToken",
             name,
             suffix,
-            supply,
+            supply * 10**18,
             settings.PLATFORM_ADDRESS,
             addresses["marketplace_address"],
         )
@@ -27,3 +27,13 @@ class DpfTokenService(BaseContractService):
 
     def tokens_count(self) -> int:
         return self.call("tokensCount")
+
+    def set_offering(self, token_address: str, offering_address: str):
+        self._contract = self.client.get_contract("DpfToken", token_address)
+        self.transact("setOffering", offering_address)
+
+    def transfer_to_offering(
+        self, token_address: str, offering_address: str, amount: int
+    ):
+        self._contract = self.client.get_contract("DpfToken", token_address)
+        self.transact("transfer", offering_address, amount * 10**18)

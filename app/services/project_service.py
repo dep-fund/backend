@@ -209,6 +209,8 @@ class ProjectService:
     async def evaluate(
         self, project_id: UUID, admin_id: UUID, is_approved: bool, reason: str = None
     ) -> ProjectResponse:
+        print("MARKETPLACE: ", settings.MARKETPLACE_ADDRESS)
+        print("FACTORY: ", settings.FACTORY_ADDRESS)
         project = await self.session.scalar(
             self._base_query()
             .options(selectinload(Project.user))
@@ -260,6 +262,11 @@ class ProjectService:
             )
             project.offering_address = offering_address
             project.dividend_address = dividend_address
+
+            dpf_token_service.set_offering(token_address, offering_address)
+            dpf_token_service.transfer_to_offering(
+                token_address, offering_address, settings.PROJECT_TOKEN_SUPPLY
+            )
 
             token_service = TokenContractService(self.session)
             token = await token_service.create_token(

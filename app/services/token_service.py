@@ -12,9 +12,11 @@ from app.exceptions.token import (
     TokenProjectAlreadyExists,
     TokenProjectNotFound,
 )
+from app.models.project import Project
 from app.models.token import Token
 from app.models.token_project import TokenProject
 from app.schemas.token import TokenProjectResponse, TokenResponse
+from app.services.blockchain.contracts.offering_service import OfferingService
 
 
 class TokenContractService:
@@ -90,7 +92,21 @@ class TokenContractService:
         if not token_project:
             raise TokenProjectNotFound()
 
-        return TokenProjectResponse.model_validate(token_project)
+        response = TokenProjectResponse.model_validate(token_project)
+
+        try:
+            project = await self.session.scalar(
+                select(Project).where(Project.id == project_id)
+            )
+            if project and project.offering_address:
+                offering_service = OfferingService()
+                response.current_price = offering_service.current_price(
+                    project.offering_address
+                )
+        except Exception:
+            pass
+
+        return response
 
     async def reduce_available_supply(
         self, project_id: UUID, amount: Decimal
