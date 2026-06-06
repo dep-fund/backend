@@ -1,0 +1,58 @@
+import json
+from pathlib import Path
+
+from web3 import Web3
+from app.core.config import settings
+
+
+class DeploymentReader:
+    DEPLOY_PATH = Path("/blockchain/broadcast/Deploy.s.sol/31337/run-latest.json")
+
+    USDC_DEPLOY_PATH = Path(
+        "/blockchain/broadcast/DeployMockUSDC.s.sol/31337/run-latest.json"
+    )
+
+    @staticmethod
+    def _load(path: Path) -> dict:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+
+    @classmethod
+    def _find_contract(cls, data: dict, contract_name: str) -> str:
+        for tx in data.get("transactions", []):
+            if tx.get("contractName") == contract_name:
+                return tx["contractAddress"]
+
+        raise RuntimeError(f"Contract not found: {contract_name}")
+
+    @classmethod
+    def get_addresses(cls) -> dict:
+        deploy_data = cls._load(cls.DEPLOY_PATH)
+        usdc_data = cls._load(cls.USDC_DEPLOY_PATH)
+
+        return {
+            "factory_address": Web3.to_checksum_address(
+                cls._find_contract(deploy_data, "DpfFactory")
+            ),
+            "marketplace_address": Web3.to_checksum_address(
+                cls._find_contract(deploy_data, "Marketplace")
+            ),
+            "usdc_address": Web3.to_checksum_address(
+                cls._find_contract(usdc_data, "MockUSDC")
+            ),
+            "offering_address": Web3.to_checksum_address(
+                cls._find_contract(deploy_data, "Offering")
+            ),
+        }
+
+
+class DeploymentReaderProduction:
+    @classmethod
+    def get_addresses(cls) -> dict:
+        return {
+            "factory_address": Web3.to_checksum_address(settings.FACTORY_ADDRESS),
+            "marketplace_address": Web3.to_checksum_address(
+                settings.MARKETPLACE_ADDRESS
+            ),
+            "usdc_address": Web3.to_checksum_address(settings.USDC_ADDRESS),
+        }

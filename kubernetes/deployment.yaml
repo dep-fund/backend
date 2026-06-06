@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: depfund-backend
+  namespace: depfund
+  labels:
+    app: depfund-backend
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: backend=us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backend
+    argocd-image-updater.argoproj.io/backend.update-strategy: latest
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: depfund-backend
+  template:
+    metadata:
+      labels:
+        app: depfund-backend
+    spec:
+      terminationGracePeriodSeconds: 30
+      initContainers:
+        - name: run-migrations
+          image: us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backend:latest
+          imagePullPolicy: Always
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef:
+                name: depfund-config
+            - secretRef:
+                name: depfund-secrets
+          env:
+            - name: IN_DOCKER
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+      containers:
+        - name: backend
+          image: us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: depfund-config
+            - secretRef:
+                name: depfund-secrets
+          env:
+            - name: IN_DOCKER
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: PORT
+              value: "8000"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 2
