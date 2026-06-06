@@ -13,6 +13,7 @@ class DpfTokenService(BaseContractService):
 
     def create_project_token(self, name: str, suffix: str, supply: int) -> str:
         # addresses = DeploymentReader.get_addresses()
+        print("SUPPLY", supply)
         addresses = DeploymentReaderProduction.get_addresses()
         receipt = self.transact(
             "createProjectToken",

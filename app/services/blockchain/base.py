@@ -104,6 +104,29 @@ class BlockchainClient:
     def send_transaction(self, tx) -> dict:
         """Sign and send a transaction, waiting for the receipt."""
         tx["nonce"] = self.w3.eth.get_transaction_count(self.deployer.address)
+        print(
+            "BALANCE",
+            self.w3.from_wei(self.w3.eth.get_balance(self.deployer.address), "ether"),
+        )
+
+        print("GAS PRICE", self.w3.from_wei(self.w3.eth.gas_price, "gwei"))
+
+        print("TX", tx)
+        print("TX GAS", tx.get("gas"))
+        print("MAX FEE", tx.get("maxFeePerGas"))
+        print("PRIORITY", tx.get("maxPriorityFeePerGas"))
+
+        required = tx["gas"] * tx["maxFeePerGas"]
+        print("REQUIRED ETH", self.w3.from_wei(required, "ether"))
+        gas = self.w3.eth.estimate_gas(tx)
+
+        print("TO:", tx.get("to"))
+        print("GAS:", gas)
+        print("GAS PRICE:", self.w3.eth.gas_price)
+        print("DEPLOYER", self.deployer.address)
+
+        tx["gas"] = gas
+        tx["nonce"] = self.w3.eth.get_transaction_count(self.deployer.address)
         tx["gas"] = self.w3.eth.estimate_gas(tx)
 
         if "gasPrice" in tx and ("maxFeePerGas" in tx or "maxPriorityFeePerGas" in tx):
