@@ -14,9 +14,9 @@ variable "backoffice_bucket_name" {
   type = string
 }
 
-variable "backend_neg_id" {
-  type        = string
-  description = "The self_link of the GKE NEG for the backend service. Run: gcloud compute network-endpoint-groups list --project=PROJECT_ID"
+variable "backend_neg_ids" {
+  type        = list(string)
+  description = "List of self_links of the GKE NEGs (one per zone) for the backend service"
 }
 
 variable "static_ip_name" {

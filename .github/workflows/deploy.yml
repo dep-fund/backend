@@ -12,6 +12,7 @@ env:
   CLUSTER_NAME: prod-depfund-cluster
   CLUSTER_LOCATION: us-central1
   NAMESPACE: depfund
+  TF_DIR: infrastructure/environments/prod
 
 jobs:
   deploy:
@@ -31,6 +32,14 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.12.x
+
+      - name: Init Terraform
+        run: tofu -chdir=$TF_DIR init
+
       - name: Get GKE credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
@@ -45,7 +54,7 @@ jobs:
         run: |
           SHA_SHORT=$(git rev-parse --short HEAD)
           IMAGE="us-central1-docker.pkg.dev/$PROJECT_ID/depfund/backend:$SHA_SHORT"
-          sed -i "s|REPLACE_PROJECT|$PROJECT_ID|g" kubernetes/deployment.yaml
+          sed -i "s|image: .*/depfund/backend:latest|image: $IMAGE|g" kubernetes/deployment.yaml
           echo "Using image: $IMAGE"
 
       - name: Inject secrets into cluster
@@ -55,6 +64,7 @@ jobs:
             --dry-run=client -o yaml \
             --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
             --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
             --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
             --from-literal=ADMIN_SECRET_KEY="${{ secrets.ADMIN_SECRET_KEY }}" \
             --from-literal=SENDER_PASSWORD="${{ secrets.SENDER_PASSWORD }}" \
@@ -70,11 +80,13 @@ jobs:
         run: |
           kubectl delete ingress depfund-ingress -n $NAMESPACE --ignore-not-found
 
-      - name: Update ConfigMap with LB IP
+      - name: Update ConfigMap with LB IP and Cloud SQL
         run: |
           LB_IP=$(gcloud compute addresses describe prod-depfund-ingress-ip \
             --global --format="value(address)" 2>/dev/null || echo "PENDING")
+          DB_IP=$(tofu -chdir=$TF_DIR output -raw cloudsql_private_ip 2>/dev/null || echo "PENDING")
           sed -i "s/LOAD_BALANCER_IP/$LB_IP/g" kubernetes/configmap.yaml
+          sed -i "s/CLOUDSQL_PRIVATE_IP/$DB_IP/g" kubernetes/configmap.yaml
 
       - name: Apply Kubernetes manifests
         run: |
@@ -84,6 +96,23 @@ jobs:
           kubectl apply -f kubernetes/hpa.yaml
           kubectl apply -f kubernetes/backup-cronjob.yaml
 
+      - name: Resolve NEG ID and sync Terraform LB
+        run: |
+          NEG_NAME=$(kubectl get svc depfund-backend -n $NAMESPACE \
+            -o jsonpath='{.metadata.annotations.cloud\.google\.com/neg-status}' \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['8000'])" 2>/dev/null || true)
+
+          if [ -n "$NEG_NAME" ]; then
+            NEG_ID=$(gcloud compute network-endpoint-groups describe "$NEG_NAME" \
+              --region=$CLUSTER_LOCATION --format="value(selfLink)")
+            echo "NEG ID: $NEG_ID"
+            sed -i '/^backend_neg_id/d' $TF_DIR/terraform.tfvars
+            echo "backend_neg_id = \"$NEG_ID\"" >> $TF_DIR/terraform.tfvars
+            tofu -chdir=$TF_DIR apply -auto-approve
+          else
+            echo "NEG not ready yet, skipping Terraform sync"
+          fi
+
       - name: Wait for rollout
         run: |
           kubectl rollout status deployment/depfund-backend -n $NAMESPACE --timeout=5m
@@ -92,5 +121,5 @@ jobs:
         run: |
           echo "Waiting for load balancer..."
           sleep 30
-          echo "Run 'tofu output lb_ip_address' from infrastructure/environments/prod to get the LB IP"
-          curl -sI "http://$(tofu -chdir=infrastructure/environments/prod output -raw lb_ip_address)/health" || echo "Health check failed (may still be provisioning)"
+          echo "Run 'tofu output lb_ip_address' from $TF_DIR to get the LB IP"
+          curl -sI "http://$(tofu -chdir=$TF_DIR output -raw lb_ip_address)/health" || echo "Health check failed (may still be provisioning)"

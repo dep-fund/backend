@@ -45,7 +45,8 @@ variable "node_max_count" {
   default     = 3
 }
 
-variable "backend_neg_id" {
-  description = "Self-link of the GKE NEG for the backend. Get it via: gcloud compute network-endpoint-groups list --project=depfund-498022-d7"
-  type        = string
+variable "backend_neg_ids" {
+  description = "Self-links of the GKE NEGs (one per zone) for the backend"
+  type        = list(string)
+  default     = []
 }

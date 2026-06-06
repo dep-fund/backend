@@ -47,9 +47,9 @@ echo "▸ Secrets desde ./secrets/"
 SECRETS_DIR="${ROOT_DIR}/secrets"
 if [ -d "${SECRETS_DIR}" ]; then
   kubectl create secret generic depfund-secrets -n "${NAMESPACE}" \
-    --from-literal=POSTGRES_USER=neondb_owner \
-    --from-literal=POSTGRES_PASSWORD=npg_nk8gzJmIYei1 \
-    --from-literal=POSTGRES_DB=neondb \
+    --from-literal=POSTGRES_USER="$(cat "${SECRETS_DIR}/postgres_user.txt")" \
+    --from-literal=POSTGRES_PASSWORD="$(cat "${SECRETS_DIR}/postgres_password.txt")" \
+    --from-literal=POSTGRES_DB="$(cat "${SECRETS_DIR}/postgres_db.txt")" \
     --from-literal=SECRET_KEY="$(cat "${SECRETS_DIR}/secret_key.txt")" \
     --from-literal=ADMIN_SECRET_KEY="$(cat "${SECRETS_DIR}/admin_secret_key.txt")" \
     --from-literal=SENDER_PASSWORD="$(cat "${SECRETS_DIR}/sender_password.txt")" \

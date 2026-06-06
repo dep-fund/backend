@@ -55,6 +55,17 @@ module "iam" {
   depends_on   = [module.gke]
 }
 
+module "cloudsql" {
+  source       = "../../modules/cloudsql"
+  project_id   = var.gcp_project_id
+  region       = var.gcp_region
+  environment  = var.environment
+  network_id   = module.vpc.network_self_link
+  db_name      = "depfund"
+  db_user      = "depfund_app"
+  depends_on   = [module.vpc]
+}
+
 module "frontend_buckets" {
   source       = "../../modules/frontend-buckets"
   project_id   = var.gcp_project_id
@@ -69,7 +80,7 @@ module "lb" {
   environment           = var.environment
   frontend_bucket_name  = module.frontend_buckets.frontend_bucket_name
   backoffice_bucket_name = module.frontend_buckets.backoffice_bucket_name
-  backend_neg_id        = var.backend_neg_id
+  backend_neg_ids       = var.backend_neg_ids
   static_ip_name        = google_compute_global_address.ingress_ip.name
   depends_on            = [module.frontend_buckets]
 }

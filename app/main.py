@@ -102,3 +102,5 @@ app.include_router(admin_category_router)
 app.include_router(admin_project_advance)
 app.include_router(admin_project_document)
 app.include_router(admin_project_images)
+
+app.include_router(api_v1)

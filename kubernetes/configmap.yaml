@@ -4,9 +4,9 @@ metadata:
   name: depfund-config
   namespace: depfund
 data:
-  POSTGRES_HOST: "ep-square-hill-an7t5zyb-pooler.c-6.us-east-1.aws.neon.tech"
+  POSTGRES_HOST: "CLOUDSQL_PRIVATE_IP"
   POSTGRES_PORT: "5432"
-  POSTGRES_DB: "neondb"
+  POSTGRES_DB: "depfund"
   SMTP_HOST: "smtp.gmail.com"
   SMTP_PORT: "587"
   SENDER_EMAIL: "depfund.soporte@gmail.com"

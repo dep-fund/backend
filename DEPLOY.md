@@ -37,8 +37,7 @@ kubectl version --client
 Además necesitás:
 - Una cuenta de GCP con **facturación habilitada**
 - Un repositorio en GitHub con el código del backend
-- Credenciales de **Neon** (host, user, password, db name)
-- Credenciales de **Cloudinary** (cloud name, api key, api secret)
+- Archivos de secrets en `backend/secrets/` (ver `secrets/` directorio)
 - Credenciales de **Google OAuth** (client id, client secret)
 - **RPC URL** de tu red blockchain (Alchemy / Infura / propia)
 
@@ -239,21 +238,25 @@ Esto crea:
 - VPC + subnet + NAT + firewall rules
 - GKE Standard cluster (1 nodo spot `e2-small`, autoescala hasta 3)
 - Artifact Registry repository (docker images)
+- Cloud SQL (PostgreSQL 16, Private IP, backups automáticos, PITR 7 días)
 - GCS bucket para backups
 - **GCS buckets para frontend y backoffice** (públicos, static website)
 - **HTTP Load Balancer** (reemplaza el GKE ingress, usa la IP estática existente)
-- Service Accounts (cluster SA + backup SA)
+- Service Accounts (cluster SA + backup SA + Cloud SQL)
 
-El `apply` tarda **~5-8 minutos**.
+El `apply` tarda **~8-12 minutos**.
 
-> **Nota:** El módulo LB necesita el `backend_neg_id` (self-link del NEG de GKE).
-> Si es la primera vez, aplicá primero sin el LB, agregá la annotation al service,
-> obtené el NEG, y luego aplicá con el valor.
+> **Nota sobre el NEG:** El módulo LB necesita el `backend_neg_id` (self-link del NEG de GKE).
+> El workflow de CI (`deploy.yml`) resuelve esto automáticamente: aplica los manifests de K8s,
+> extrae el NEG ID del Service, lo escribe en `terraform.tfvars` y ejecuta `tofu apply`.
+> Si es la primera vez, aplicá primero el plan sin el LB, deployá la app al GKE,
+> y luego el workflow sincronizará el LB automáticamente.
 
 ### 5.3 Configurar el NEG de GKE (Network Endpoint Group)
 
 El LB enruta al backend GKE mediante un NEG creado automáticamente por la annotation
-`cloud.google.com/neg` en el Service. Es un paso único.
+`cloud.google.com/neg` en el Service. El workflow de CI lo resuelve automático.
+Solo si necesitás hacerlo manual:
 
 ```bash
 # 1. Aplicar el service con la annotation
@@ -262,23 +265,24 @@ kubectl apply -f kubernetes/service.yaml
 # 2. Esperar a que GKE cree el NEG
 sleep 15
 
-# 3. Obtener el nombre del NEG
-gcloud compute network-endpoint-groups list \
-  --project depfund-498022-d7
-
-# 4. Copiar el self_link del NEG (formato: projects/.../zones/.../networkEndpointGroups/k8s1-...)
-#    y pasarlo como variable backend_neg_id al aplicar tofu
-cd infrastructure/environments/prod
-tofu apply -var="backend_neg_id=projects/.../zones/.../networkEndpointGroups/k8s1-..."
+# 3. Obtener el self_link del NEG
+NEG_NAME=$(kubectl get svc depfund-backend -n depfund \
+  -o jsonpath='{.metadata.annotations.cloud\.google\.com/neg-status}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['8000'])")
+gcloud compute network-endpoint-groups describe "$NEG_NAME" \
+  --region=us-central1 --format="value(selfLink)"
 ```
 
 ### 5.4 Outputs útiles
 
 ```bash
 make infra-output
-# lb_ip_address       → IP del LB
-# frontend_bucket_name → prod-depfund-frontend
-# backoffice_bucket_name → prod-depfund-backoffice
+# lb_ip_address         → IP del LB
+# frontend_bucket_name  → prod-depfund-frontend
+# backoffice_bucket_name→ prod-depfund-backoffice
+# cloudsql_private_ip   → IP privada de Cloud SQL
+# cloudsql_db_name      → depfund
+# cloudsql_db_user      → depfund_app
 ```
 
 ### 5.5 Conectarse al cluster
@@ -341,9 +345,10 @@ En GitHub: **Settings → Secrets and variables → Actions → Variables**
 En GitHub: **Settings → Secrets and variables → Actions → Secrets**
 
 | Secret | Descripción |
-|---|---|
-| `POSTGRES_USER` | `neondb_owner` |
-| `POSTGRES_PASSWORD` | Connection string password |
+|---|---|---|
+| `POSTGRES_USER` | Usuario de la base de datos Cloud SQL |
+| `POSTGRES_PASSWORD` | Password del usuario Cloud SQL |
+| `POSTGRES_DB` | Nombre de la base de datos (`depfund`) |
 | `SECRET_KEY` | JWT secret key (generar: `openssl rand -hex 32`) |
 | `ADMIN_SECRET_KEY` | Admin guard key |
 | `SENDER_PASSWORD` | Gmail App Password |
@@ -360,9 +365,9 @@ Antes del primer deploy, editá `kubernetes/configmap.yaml` con los valores corr
 
 | Key | Valor |
 |---|---|
-| `POSTGRES_HOST` | `ep-square-hill-an7t5zyb-pooler.c-6.us-east-1.aws.neon.tech` |
+| `POSTGRES_HOST` | Se reemplaza automáticamente por `tofu output cloudsql_private_ip` |
 | `POSTGRES_PORT` | `5432` |
-| `POSTGRES_DB` | `neondb` |
+| `POSTGRES_DB` | `depfund` |
 | `RPC_URL` | URL de tu RPC (Infura/Alchemy) |
 | `GOOGLE_REDIRECT_URI` | Se actualiza automáticamente en el deploy |
 
@@ -463,18 +468,15 @@ kubectl scale deployment/depfund-backend -n depfund --replicas=3
 ### 10.1 Backup manual
 
 ```bash
-# Configurar variables de entorno
-export PGHOST="ep-xxx.us-east-2.aws.neon.tech"
-export PGPORT="5432"
-export PGUSER="..."
-export PGPASSWORD="..."
-export PGDB="depfund"
-export BUCKET="prod-depfund-backups"
-export CLOUDINARY_CLOUD_NAME="..."
-export CLOUDINARY_API_KEY="..."
-export CLOUDINARY_API_SECRET="..."
+# Obtener credenciales desde tofu
+DB_IP=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_private_ip)
+DB_NAME=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_db_name)
+DB_USER=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_db_user)
+DB_PASS=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_db_password)
 
-./scripts/backup.sh
+# O ejecutar con el script que lee las credenciales del secret de K8s:
+kubectl get secret depfund-secrets -n depfund \
+  -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
 ```
 
 ### 10.2 Backup automático (CronJob en K8s)
@@ -515,7 +517,7 @@ cd infrastructure/environments/prod
 tofu destroy
 ```
 
-Esto elimina: GKE cluster, VPC, NAT, firewall rules, Artifact Registry, GCS bucket.
+Esto elimina: GKE cluster, VPC, NAT, firewall rules, Artifact Registry, Cloud SQL, GCS buckets.
 
 > El bucket de backups se elimina **solo si está vacío**. Si tiene datos, vacialo primero o borralo manualmente desde la consola.
 
@@ -576,8 +578,9 @@ pytest app/tests/ -v                              # tests locales
 | Cloud NAT | ~$5/mes |
 | Global HTTP LB + forwarding rule | ~$19/mes |
 | Artifact Registry (1 imagen) | ~$0.50/mes |
+| Cloud SQL (db-f1-micro, 20GB SSD) | ~$25/mes |
 | GCS Backups + Frontend Buckets (pocos GB) | ~$1/mes |
-| **Total estimado** | **~$35/mes** |
+| **Total estimado** | **~$60/mes** |
 
 Si el cluster se usa **solo para pruebas/presentaciones**, hacé `tofu destroy` cuando no lo uses y solo pagás por el storage (GCS + Artifact Registry ≈ $1-2/mes).
 
@@ -585,9 +588,9 @@ Si el cluster se usa **solo para pruebas/presentaciones**, hacé `tofu destroy` 
 
 > **Próximos pasos recomendados** (cuando hagan falta):
 > - [x] Migrar frontends de Vercel a GCP (GCS + LB unificado)
-> - [ ] Agregar un dominio y TLS (cert-manager + Cloud DNS)
+> - [x] Migrar DB de Neon a Cloud SQL (ver `infrastructure/modules/cloudsql/`)
+> - [ ] Agregar un dominio y TLS (Cloudflare o GCP-managed SSL)
 > - [ ] Migrar secrets a GCP Secret Manager + External Secrets Operator
-> - [ ] Migrar DB de Neon a Cloud SQL (ver `infrastructure/modules/cloudsql/`)
 > - [ ] Migrar archivos de Cloudinary a GCS (ver `infrastructure/modules/uploads/`)
 > - [ ] Agregar entorno `staging`
 > - [ ] Implementar azul/verde (blue-green deployment)

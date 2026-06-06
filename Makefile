@@ -93,9 +93,9 @@ gke-secrets:
 	kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -; \
 	S=secrets; \
 	kubectl create secret generic depfund-secrets -n ${NAMESPACE} \
-		--from-literal=POSTGRES_USER=neondb_owner \
-		--from-literal=POSTGRES_PASSWORD=npg_nk8gzJmIYei1 \
-		--from-literal=POSTGRES_DB=neondb \
+		--from-literal=POSTGRES_USER="$$(cat $$S/postgres_user.txt)" \
+		--from-literal=POSTGRES_PASSWORD="$$(cat $$S/postgres_password.txt)" \
+		--from-literal=POSTGRES_DB="$$(cat $$S/postgres_db.txt)" \
 		--from-literal=SECRET_KEY="$$(cat $$S/secret_key.txt)" \
 		--from-literal=ADMIN_SECRET_KEY="$$(cat $$S/admin_secret_key.txt)" \
 		--from-literal=SENDER_PASSWORD="$$(cat $$S/sender_password.txt)" \

@@ -33,3 +33,24 @@ output "lb_url_map" {
 output "lb_ip_address" {
   value = module.lb.lb_ip_address
 }
+
+output "cloudsql_private_ip" {
+  description = "Private IP of the Cloud SQL instance"
+  value       = module.cloudsql.private_ip_address
+}
+
+output "cloudsql_db_name" {
+  description = "Cloud SQL database name"
+  value       = module.cloudsql.db_name
+}
+
+output "cloudsql_db_user" {
+  description = "Cloud SQL application user"
+  value       = module.cloudsql.db_user
+}
+
+output "cloudsql_db_password" {
+  description = "Cloud SQL application password"
+  value       = module.cloudsql.db_password
+  sensitive   = true
+}
