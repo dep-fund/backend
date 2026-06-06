@@ -19,5 +19,6 @@ class TokenProjectResponse(BaseModel):
     total_supply: Decimal
     available_supply: Decimal
     token: TokenResponse
+    current_price: Decimal | None = None
 
     model_config = ConfigDict(from_attributes=True)

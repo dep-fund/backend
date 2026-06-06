@@ -18,7 +18,7 @@ class ProjectCreateRequest(BaseModel):
     min_amount: Optional[Decimal] = None
     annual_expenses: Optional[Decimal] = None
     annual_gross_profit: Optional[Decimal] = None
-    estimated_development_days: int
+    estimated_development_days: int = 180
     suffix: Optional[str] = Field(None, min_length=3, max_length=50)
 
 
@@ -38,6 +38,7 @@ class ProjectUpdateAdminRequest(BaseModel):
     state: Optional[ProjectState] = None
     risk: Optional[RiskLevel] = None
     category_ids: Optional[List[UUID]] = None
+
 
 class ProjectRejectRequest(BaseModel):
     reason: str
@@ -61,5 +62,7 @@ class ProjectResponse(BaseModel):
     roi: Optional[Decimal] = None
     annual_benefits: Optional[Decimal] = None
     suffix: Optional[str] = None
+    dividend_address: Optional[str] = None
+    offering_address: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

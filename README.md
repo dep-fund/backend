@@ -9,10 +9,12 @@ app/
 ├── routes/             → FastAPI routers
 ├── models/             → SQLAlchemy ORM models
 ├── schemas/            → Pydantic schemas
-├── services/           → Business logic
+├── services/
+│   └── blockchain/
+│       ├── abis/       → Bundled contract artifacts (ABI + bytecode)
+│       └── contracts/  → Contract service classes
 ├── tests/              → Unit and integration tests
 └── db/                 → Session and engine setup
-tests/                  → Mirrors routes/ and services/
 ```
 
 ---
@@ -63,7 +65,7 @@ make dev-down
 ```
 
 ### Candidato a Deploy (Producción)
-Solo levanta la base de datos y el backend. No incluye Anvil ni inicializa contratos, asumiendo conexión a una red remota.
+Solo levanta la base de datos y el backend. No incluye Anvil ni inicializa contratos. Se conecta a Sepolia como red remota.
 
 ```bash
 make prod-up
@@ -76,6 +78,7 @@ make prod-down
 make dev-down-v      # stop + wipe database local
 make dev-logs        # tail logs del backend en local
 make dev-db          # entrar a la base de datos por consola
+make sync-abis       # sincronizar ABIs desde el repo de blockchain
 ```
 
 > The backend connects to Postgres on port `5432` internally.
@@ -83,7 +86,55 @@ make dev-db          # entrar a la base de datos por consola
 
 ---
 
-## Manual server healtcheck
+## Blockchain — Contract ABIs
+
+El backend necesita los ABIs (y bytecode, para los contratos que despliega en runtime) de los smart contracts. Estos artifacts son generados por Foundry al compilar el repo `blockchain/` y se guardan versionados en `app/services/blockchain/abis/`.
+
+### Por qué se commitean los ABIs
+
+El backend es autónomo: no depende del repo de blockchain ni de ninguna ruta externa en runtime. Los artifacts en `abis/` son parte del backend igual que cualquier otro archivo de configuración.
+
+### Contratos incluidos
+
+| Contrato | Tipo de artifact | Motivo |
+|---|---|---|
+| `Offering` | Completo (ABI + bytecode) | El backend lo despliega en runtime al aprobar proyectos |
+| `Dividends` | Completo (ABI + bytecode) | El backend lo despliega en runtime al aprobar proyectos |
+| `DpfFactory` | Solo ABI | Ya desplegado en Sepolia, dirección fija en env vars |
+| `Marketplace` | Solo ABI | Ya desplegado en Sepolia, dirección fija en env vars |
+
+### Sincronizar artifacts
+
+Cuando se modifica y recompila algún contrato, hay que re-sincronizar los artifacts al backend:
+
+```bash
+# Asumiendo estructura estándar del monorepo (backend/ y blockchain/ al mismo nivel)
+cd backend/
+make sync-abis
+
+# Si el repo de blockchain está en otra ruta:
+make sync-abis-custom BLOCKCHAIN_OUT=/ruta/a/blockchain/out
+```
+
+Luego commitear los cambios:
+```bash
+git add app/services/blockchain/abis/
+git commit -m "chore: sync contract ABIs"
+```
+
+### Flujo completo al modificar un contrato
+
+```
+1. Modificar el contrato en blockchain
+2. cd blockchain && forge build
+3. cd backend && make sync-abis
+4. git add app/services/blockchain/abis/ && git commit (para actualizar los abi cuando este todo testeado y desplegado en Sepolia)
+5. make prod-up
+```
+
+---
+
+## Manual server healthcheck
 
 ```bash
 GET http://localhost:8000/health
@@ -120,3 +171,10 @@ The project includes a GitHub Actions CI workflow (`.github/workflows/ci.yml`) t
 | `FRONTEND_URL` | `http://localhost:5173` | URL del frontend público |
 | `BACKOFFICE_URL` | `http://localhost:5174` | URL del panel administrativo |
 | `LOG_SQL_QUERIES` | `0` | Set to 1 to echo SQL queries to stdout |
+| `RPC_URL` | `http://127.0.0.1:8545` | RPC endpoint (Sepolia en prod, Anvil en dev) |
+| `DEPLOYER_PRIVATE_KEY` | — | Private key de la cuenta que firma transacciones |
+| `FACTORY_ADDRESS` | — | Dirección del contrato DpfFactory en Sepolia |
+| `MARKETPLACE_ADDRESS` | — | Dirección del contrato Marketplace en Sepolia |
+| `USDC_ADDRESS` | — | Dirección del contrato USDC en Sepolia |
+| `TREASURY_ADDRESS` | — | Dirección de la tesorería del protocolo |
+| `PLATFORM_ADDRESS` | — | Dirección de la cuenta plataforma |

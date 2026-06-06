@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     PLATFORM_ADDRESS: str = os.getenv(
         "PLATFORM_ADDRESS", "0x2560d5b0CDe93D618425FadfC9F5511e8730Af90"
     )
+    FACTORY_ADDRESS: str = os.getenv("FACTORY_ADDRESS", "")
+    MARKETPLACE_ADDRESS: str = os.getenv("MARKETPLACE_ADDRESS", "")
+    USDC_ADDRESS: str = os.getenv("USDC_ADDRESS", "")
     PROJECT_TOKEN_SUPPLY: int = 1_000_000
     OFFERING_DEADLINE_SECONDS: int = 7_776_000
 

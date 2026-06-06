@@ -209,6 +209,8 @@ class ProjectService:
     async def evaluate(
         self, project_id: UUID, admin_id: UUID, is_approved: bool, reason: str = None
     ) -> ProjectResponse:
+        print("MARKETPLACE: ", settings.MARKETPLACE_ADDRESS)
+        print("FACTORY: ", settings.FACTORY_ADDRESS)
         project = await self.session.scalar(
             self._base_query()
             .options(selectinload(Project.user))
@@ -231,7 +233,6 @@ class ProjectService:
                 raise MissingMandatoryProjectInfo()
             if not project.categories or len(project.categories) == 0:
                 raise MissingMandatoryProjectInfo()
-
             project.state = ProjectState.APPROVED
             new_state = ProjectState.APPROVED
             dpf_token_service = DpfTokenService()
@@ -240,7 +241,6 @@ class ProjectService:
                 suffix=project.suffix,
                 supply=settings.PROJECT_TOKEN_SUPPLY,
             )
-
             offering_service = OfferingService()
             offering_address = offering_service.deploy(
                 dpf_token=token_address,
@@ -261,6 +261,12 @@ class ProjectService:
             project.offering_address = offering_address
             project.dividend_address = dividend_address
 
+            dpf_token_service.set_offering(token_address, offering_address)
+            dpf_token_service.wait_for_offering_set(token_address, offering_address)
+            dpf_token_service.transfer_to_offering(
+                token_address, offering_address, settings.PROJECT_TOKEN_SUPPLY
+            )
+
             token_service = TokenContractService(self.session)
             token = await token_service.create_token(
                 name=project.name,
@@ -272,6 +278,10 @@ class ProjectService:
                 project_id=project_id,
                 total_supply=Decimal(settings.PROJECT_TOKEN_SUPPLY),
             )
+            print("Deployed, Addresses: ")
+            print("TOKEN: ", token_address)
+            print("OFFERING: ", offering_address)
+            print("DIVIDEND: ", dividend_address)
         else:
             project.state = ProjectState.REJECTED
             new_state = ProjectState.REJECTED
