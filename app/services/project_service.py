@@ -233,7 +233,6 @@ class ProjectService:
                 raise MissingMandatoryProjectInfo()
             if not project.categories or len(project.categories) == 0:
                 raise MissingMandatoryProjectInfo()
-
             project.state = ProjectState.APPROVED
             new_state = ProjectState.APPROVED
             dpf_token_service = DpfTokenService()
@@ -242,7 +241,6 @@ class ProjectService:
                 suffix=project.suffix,
                 supply=settings.PROJECT_TOKEN_SUPPLY,
             )
-
             offering_service = OfferingService()
             offering_address = offering_service.deploy(
                 dpf_token=token_address,
@@ -264,6 +262,7 @@ class ProjectService:
             project.dividend_address = dividend_address
 
             dpf_token_service.set_offering(token_address, offering_address)
+            dpf_token_service.wait_for_offering_set(token_address, offering_address)
             dpf_token_service.transfer_to_offering(
                 token_address, offering_address, settings.PROJECT_TOKEN_SUPPLY
             )

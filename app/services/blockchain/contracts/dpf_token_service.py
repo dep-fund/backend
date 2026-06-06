@@ -1,3 +1,4 @@
+import time
 from app.services.blockchain.base_contract_service import BaseContractService
 from app.services.blockchain.deployment import DeploymentReaderProduction
 from app.core.config import settings
@@ -31,10 +32,33 @@ class DpfTokenService(BaseContractService):
 
     def set_offering(self, token_address: str, offering_address: str):
         self._contract = self.client.get_contract("DpfToken", token_address)
-        self.transact("setOffering", offering_address)
+        print("SET OFFERING contract address:", self._contract.address)
+        print("SET OFFERING to:", offering_address)
+        receipt = self.transact("setOffering", offering_address)
+        print("SET OFFERING receipt:", receipt)
 
     def transfer_to_offering(
         self, token_address: str, offering_address: str, amount: int
     ):
         self._contract = self.client.get_contract("DpfToken", token_address)
-        self.transact("transfer", offering_address, amount * 10**18)
+        print(
+            "SET OFFERING IN TRANSFER TO OFFERING contract address:",
+            self._contract.address,
+        )
+        print("SET OFFERING IN TRANSFER TO OFFERING to:", offering_address)
+        receipt = self.transact("transfer", offering_address, amount * 10**18)
+        print("SET OFFERING IN TRANSFER TO OFFERING receipt:", receipt)
+
+    def wait_for_offering_set(
+        self, token_address: str, offering_address: str, timeout: int = 30
+    ):
+        token_contract = self.client.get_contract("DpfToken", token_address)
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            current = token_contract.functions.offering().call()
+            if current.lower() == offering_address.lower():
+                return
+            time.sleep(1)
+        raise TimeoutError(
+            f"offering() never updated to {offering_address} after {timeout}s"
+        )
