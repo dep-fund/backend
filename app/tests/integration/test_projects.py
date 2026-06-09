@@ -2,16 +2,18 @@ import pytest
 from httpx import AsyncClient
 
 BASE_URL = "/projects"
-
 PROJECT_PAYLOAD = {
     "name": "Football Academy",
     "description": "Funding for youth football academy",
     "total_amount": "50000.00",
+    "min_amount": "1000.00",
+    "annual_expenses": "10000.00",
+    "annual_gross_profit": "25000.00",
+    "suffix": "ARS",
     "ubication": "Buenos Aires, Argentina",
     "category_ids": [],
     "estimated_development_days": 180,
 }
-
 
 # ---------------------------------------------------------------
 # POST /projects
