@@ -14,12 +14,16 @@ class ProjectCreateRequest(BaseModel):
     description: str
     total_amount: Decimal
     ubication: str
-    category_ids: Optional[List[UUID]] = None
-    min_amount: Optional[Decimal] = None
-    annual_expenses: Optional[Decimal] = None
-    annual_gross_profit: Optional[Decimal] = None
+
+    min_amount: Decimal
+    annual_expenses: Decimal
+    annual_gross_profit: Decimal
+
+    suffix: str = Field(..., min_length=3, max_length=50)
+
     estimated_development_days: int = 180
-    suffix: Optional[str] = Field(None, min_length=3, max_length=50)
+
+    category_ids: Optional[List[UUID]] = None
 
 
 class ProjectUpdateRequest(BaseModel):
@@ -55,13 +59,16 @@ class ProjectResponse(BaseModel):
     categories: List[CategoryResponse]
     created_at: datetime
     updated_at: datetime
-    min_amount: Optional[Decimal] = None
+
+    min_amount: Decimal
     risk: Optional[RiskLevel] = None
-    annual_expenses: Optional[Decimal] = None
-    annual_gross_profit: Optional[Decimal] = None
+    annual_expenses: Decimal
+    annual_gross_profit: Decimal
     roi: Optional[Decimal] = None
     annual_benefits: Optional[Decimal] = None
-    suffix: Optional[str] = None
+
+    suffix: str
+
     dividend_address: Optional[str] = None
     offering_address: Optional[str] = None
 

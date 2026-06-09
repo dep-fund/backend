@@ -4,15 +4,19 @@ from httpx import AsyncClient
 PROJECTS_URL = "/projects"
 ADMIN_PROJECTS_URL = "/admin/projects"
 
+
 PROJECT_PAYLOAD = {
     "name": "Football Academy",
     "description": "Funding for youth football academy",
     "total_amount": "50000.00",
+    "min_amount": "1000.00",
+    "annual_expenses": "10000.00",
+    "annual_gross_profit": "25000.00",
+    "suffix": "ARS",
     "ubication": "Buenos Aires, Argentina",
     "category_ids": [],
     "estimated_development_days": 180,
 }
-
 
 # ---------------------------------------------------------------
 # Flujo: usuario crea proyecto → admin lo aprueba → aparece en explore
