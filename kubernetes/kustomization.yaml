@@ -3,8 +3,11 @@ kind: Kustomization
 namespace: depfund
 resources:
   - namespace.yaml
+  - backup-sa.yaml
   - configmap.yaml
   - deployment.yaml
   - service.yaml
   - hpa.yaml
   - backup-cronjob.yaml
+  - ingress.yaml
+  - certificate.yaml

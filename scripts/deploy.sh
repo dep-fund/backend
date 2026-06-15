@@ -23,17 +23,36 @@ echo "  DepFund — Deploy local"
 echo "  Tag: ${TAG}"
 echo "═══════════════════════════════════════════"
 
-# ─── 1. Build ─────────────────────────────────
+# ─── 1. Build frontends (si existen los repos) ───
+echo ""
+if [ -d "${ROOT_DIR}/../frontend" ]; then
+  echo "▸ Bulding frontend..."
+  cd "${ROOT_DIR}/../frontend"
+  npm ci && npm run build
+  mkdir -p "${ROOT_DIR}/frontend-dist"
+  cp -r dist/* "${ROOT_DIR}/frontend-dist/"
+fi
+
+if [ -d "${ROOT_DIR}/../backoffice" ]; then
+  echo "▸ Building backoffice..."
+  cd "${ROOT_DIR}/../backoffice"
+  npm ci && npm run build
+  mkdir -p "${ROOT_DIR}/backoffice-dist"
+  cp -r dist/* "${ROOT_DIR}/backoffice-dist/"
+fi
+
+# ─── 2. Build backend image ────────────────────
 echo ""
 echo "▸ Build ${IMAGE}:${TAG}"
+cd "${ROOT_DIR}"
 docker build -t "${REPO}/${IMAGE}:${TAG}" -t "${REPO}/${IMAGE}:latest" "${ROOT_DIR}"
 
-# ─── 2. Push ──────────────────────────────────
+# ─── 3. Push ──────────────────────────────────
 echo "▸ Push a Artifact Registry"
 docker push "${REPO}/${IMAGE}:${TAG}"
 docker push "${REPO}/${IMAGE}:latest"
 
-# ─── 3. Namespace ─────────────────────────────
+# ─── 4. Namespace ─────────────────────────────
 echo "▸ Namespace"
 kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -62,9 +81,13 @@ fi
 # ─── 6. Apply manifests ──────────────────────
 echo "▸ Apply manifests"
 kubectl apply -f "${ROOT_DIR}/kubernetes/configmap.yaml"
+kubectl apply -f "${ROOT_DIR}/kubernetes/backup-sa.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/deployment.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/service.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/hpa.yaml"
+kubectl apply -f "${ROOT_DIR}/kubernetes/backup-cronjob.yaml"
+kubectl apply -f "${ROOT_DIR}/kubernetes/ingress.yaml"
+kubectl apply -f "${ROOT_DIR}/kubernetes/certificate.yaml"
 
 # ─── 7. Rollout ──────────────────────────────
 echo "▸ Esperar rollout..."
@@ -74,5 +97,6 @@ kubectl rollout status deployment/depfund-backend -n "${NAMESPACE}" --timeout=5m
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  Deploy completado ✅"
+echo "  Ingress: https://depfund.34.58.61.129.sslip.io"
 echo "  LB IP: Ejecutar 'tofu output lb_ip_address' desde infrastructure/environments/prod"
 echo "═══════════════════════════════════════════"

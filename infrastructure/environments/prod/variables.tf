@@ -52,7 +52,7 @@ variable "node_max_count" {
 }
 
 variable "backend_neg_ids" {
-  description = "Self-links of the GKE NEGs (one per zone) for the backend"
+  description = "Self-links of the GKE NEGs (one per zone) for the backend (DEPRECATED — no longer needed with Ingress)"
   type        = list(string)
   default     = []
 }

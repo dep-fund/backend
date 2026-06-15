@@ -1,21 +1,24 @@
-# DEPRECATED: The Load Balancer is now managed by OpenTofu (modules/lb).
-# The static IP is used by the Terraform-managed LB which routes:
-#   /*        → frontend GCS bucket
-#   /admin/*  → backoffice GCS bucket
-#   /api/*    → backend GKE NEG
-# Keep this file for reference only.
-#
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: depfund-ingress
-#   namespace: depfund
-#   annotations:
-#     kubernetes.io/ingress.global-static-ip-name: "prod-depfund-ingress-ip"
-# spec:
-#   ingressClassName: gce
-#   defaultBackend:
-#     service:
-#       name: depfund-backend
-#       port:
-#         number: 8000
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: depfund-ingress
+  namespace: depfund
+  annotations:
+    cert-manager.io/issue-temporary-certificate: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - depfund.34.58.61.129.sslip.io
+      secretName: depfund-tls
+  rules:
+    - host: depfund.34.58.61.129.sslip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: depfund-backend
+                port:
+                  number: 8000

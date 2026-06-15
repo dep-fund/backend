@@ -1,6 +1,7 @@
 .PHONY: dev-up dev-down dev-logs dev-db \
         infra-init infra-plan infra-apply infra-destroy \
-        gke-connect gke-build gke-secrets gke-deploy gke-all gke-logs gke-logs-migrate
+        gke-connect gke-build gke-secrets gke-deploy gke-all gke-logs gke-logs-migrate \
+        gke-ingress-nginx gke-cert-manager gke-cluster-issuer gke-ingress-setup
 
 # ─────────────────────────────────────────────
 # Entorno de Desarrollo (Docker Compose)
@@ -114,14 +115,40 @@ gke-secrets:
 
 gke-deploy:
 	kubectl apply -f kubernetes/configmap.yaml; \
+	kubectl apply -f kubernetes/backup-sa.yaml; \
 	kubectl apply -f kubernetes/deployment.yaml; \
 	kubectl apply -f kubernetes/service.yaml; \
 	kubectl apply -f kubernetes/hpa.yaml; \
 	kubectl apply -f kubernetes/backup-cronjob.yaml; \
+	kubectl apply -f kubernetes/ingress.yaml; \
+	kubectl apply -f kubernetes/certificate.yaml; \
 	kubectl rollout status deployment/depfund-backend -n ${NAMESPACE} --timeout=5m; \
-	IP=$$(tofu -chdir=infrastructure/environments/prod output -raw lb_ip_address 2>/dev/null || echo "run 'make infra-output'"); \
-	echo "LB IP: $$IP — curl -s http://$$IP/health"
+	echo "Ingress: https://depfund.34.58.61.129.sslip.io  (reemplazar 34.58.61.129 con la IP del nginx-ingress)"
 
+
+# ─────────────────────────────────────────────
+# Instalación única de nginx-ingress + cert-manager
+# ─────────────────────────────────────────────
+
+gke-ingress-nginx:
+	helm repo add nginx-stable https://helm.nginx.com/stable || true; \
+	helm repo update; \
+	helm upgrade --install nginx-ingress nginx-stable/nginx-ingress \
+		--namespace nginx-ingress --create-namespace
+
+gke-cert-manager:
+	helm repo add jetstack https://charts.jetstack.io || true; \
+	helm repo update; \
+	helm upgrade --install cert-manager jetstack/cert-manager \
+		--namespace cert-manager --create-namespace \
+		--set installCRDs=true; \
+	kubectl wait --for=condition=Ready pods -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=120s
+
+gke-cluster-issuer:
+	kubectl apply -f kubernetes/cluster-issuer.yaml
+
+gke-ingress-setup: gke-ingress-nginx gke-cert-manager gke-cluster-issuer
+	@echo "✅ nginx-ingress + cert-manager instalados."
 
 # ─────────────────────────────────────────────
 # Full ciclo: build → push → secrets → deploy

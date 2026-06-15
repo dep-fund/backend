@@ -17,22 +17,41 @@ spec:
               image: postgres:16-alpine
               command:
                 - /bin/sh
-                - -c
+                - -ec
                 - |
-                  echo "Backup iniciado: $(date)"
-                  
+                  SENDER_EMAIL="depfund.soporte@gmail.com"
+                  NOTIFY_EMAIL="${BACKUP_NOTIFY_EMAIL:-depfund.soporte@gmail.com}"
+
+                  notify() {
+                    local status="$1" msg="$2"
+                    curl --url 'smtps://smtp.gmail.com:465' --ssl-reqd \
+                      --mail-from "$SENDER_EMAIL" --mail-rcpt "$NOTIFY_EMAIL" \
+                      --user "$SENDER_EMAIL:$SENDER_PASSWORD" \
+                      -T <(echo -e "From: $SENDER_EMAIL\nTo: $NOTIFY_EMAIL\nSubject: [DepFund] Backup ${status}\n\n${msg}")
+                  }
+
+                  notify "⏳ Iniciado" "Backup de base de datos iniciado: $(date)"
+
+                  echo "--- Instalando google-cloud-sdk ---"
+                  apk add --no-cache google-cloud-sdk
+
                   echo "--- PostgreSQL Dump ---"
+                  DUMP_FILE="/tmp/depfund_db_$(date +%Y%m%d_%H%M%S).dump"
                   PGPASSWORD=$PGPASSWORD pg_dump \
                     -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDB \
                     --no-owner --no-acl \
                     -F c \
-                    > /tmp/depfund_db_$(date +%Y%m%d_%H%M%S).dump
-                  
+                    > "$DUMP_FILE"
+
+                  DUMP_SIZE=$(du -sh "$DUMP_FILE" | cut -f1)
+
                   echo "--- Subiendo a GCS ---"
-                  gsutil cp /tmp/depfund_db_*.dump gs://$BUCKET/db/
-                  
+                  gsutil cp "$DUMP_FILE" gs://$BUCKET/db/
+
                   echo "--- Limpiando ---"
-                  rm -f /tmp/depfund_db_*.dump
+                  rm -f "$DUMP_FILE"
+
+                  notify "✅ Exitoso" "Backup completado exitosamente:\n- Fecha: $(date)\n- Tamaño: ${DUMP_SIZE}\n- Bucket: gs://${BUCKET}/db/"
                   echo "Backup completado: $(date)"
               env:
                 - name: PGHOST
@@ -56,6 +75,16 @@ spec:
                       key: POSTGRES_PASSWORD
                 - name: BUCKET
                   value: "prod-depfund-backups"
+                - name: BACKUP_NOTIFY_EMAIL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: depfund-config
+                      key: BACKUP_NOTIFY_EMAIL
+                - name: SENDER_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: depfund-secrets
+                      key: SENDER_PASSWORD
               resources:
                 requests:
                   cpu: "200m"

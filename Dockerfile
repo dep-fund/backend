@@ -7,7 +7,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Crear usuario no-root
+RUN mkdir -p /app/static/frontend /app/static/backoffice
+
+COPY frontend-dist /app/static/frontend
+COPY backoffice-dist /app/static/backoffice
+
 RUN useradd --no-create-home --shell /bin/false appuser
 USER appuser
 
