@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: depfund-tls
+  namespace: depfund
+  annotations:
+    acme.cert-manager.io/http01-edit-in-place: "true"
+spec:
+  secretName: depfund-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - depfund.34.58.61.129.sslip.io

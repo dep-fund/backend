@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-sa
+  namespace: depfund
+  annotations:
+    iam.gke.io/gcp-service-account: depfund-backup-sa@depfund-498022-d7.iam.gserviceaccount.com
