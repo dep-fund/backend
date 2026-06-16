@@ -82,7 +82,7 @@ api_v1.include_router(admin_project_advance)
 api_v1.include_router(admin_project_document)
 api_v1.include_router(admin_project_images)
 
-app.include_router(health_router)
+api_v1.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(oauth_router)
 app.include_router(users_router)
