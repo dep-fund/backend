@@ -9,7 +9,7 @@ metadata:
     argocd-image-updater.argoproj.io/image-list: backend=us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backend
     argocd-image-updater.argoproj.io/backend.update-strategy: latest
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
