@@ -27,13 +27,12 @@ spec:
                     curl --url 'smtps://smtp.gmail.com:465' --ssl-reqd \
                       --mail-from "$SENDER_EMAIL" --mail-rcpt "$NOTIFY_EMAIL" \
                       --user "$SENDER_EMAIL:$SENDER_PASSWORD" \
-                      -T <(echo -e "From: $SENDER_EMAIL\nTo: $NOTIFY_EMAIL\nSubject: [DepFund] Backup ${status}\n\n${msg}")
+                      -T <(printf "From: %s\nTo: %s\nSubject: [DepFund] Backup %s\n\n%s\n" \
+                        "$SENDER_EMAIL" "$NOTIFY_EMAIL" "$status" "$msg")
                   }
 
-                  notify "⏳ Iniciado" "Backup de base de datos iniciado: $(date)"
-
-                  echo "--- Instalando google-cloud-sdk ---"
-                  apk add --no-cache google-cloud-sdk
+                  echo "--- Instalando dependencias ---"
+                  apk add --no-cache curl coreutils google-cloud-sdk
 
                   echo "--- PostgreSQL Dump ---"
                   DUMP_FILE="/tmp/depfund_db_$(date +%Y%m%d_%H%M%S).dump"
@@ -51,7 +50,7 @@ spec:
                   echo "--- Limpiando ---"
                   rm -f "$DUMP_FILE"
 
-                  notify "✅ Exitoso" "Backup completado exitosamente:\n- Fecha: $(date)\n- Tamaño: ${DUMP_SIZE}\n- Bucket: gs://${BUCKET}/db/"
+                  notify "Exitoso" "Backup completado exitosamente.\nFecha: $(date)\nTamaño: ${DUMP_SIZE}\nBucket: gs://${BUCKET}/db/"
                   echo "Backup completado: $(date)"
               env:
                 - name: PGHOST
