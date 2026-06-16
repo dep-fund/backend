@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: depfund-backoffice
+  namespace: depfund
+  labels:
+    app: depfund-backoffice
+spec:
+  selector:
+    app: depfund-backoffice
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

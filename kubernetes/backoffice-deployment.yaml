@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: depfund-backoffice
+  namespace: depfund
+  labels:
+    app: depfund-backoffice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: depfund-backoffice
+  template:
+    metadata:
+      labels:
+        app: depfund-backoffice
+    spec:
+      containers:
+        - name: backoffice
+          image: us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backoffice:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
