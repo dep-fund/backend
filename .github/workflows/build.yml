@@ -45,6 +45,9 @@ jobs:
           npm run build
           mkdir -p ../frontend-dist
           cp -r dist/* ../frontend-dist/
+        env:
+          VITE_API_URL: ${{ vars.FRONTEND_API_URL }}
+          VITE_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
 
       - name: Build backoffice
         run: |
