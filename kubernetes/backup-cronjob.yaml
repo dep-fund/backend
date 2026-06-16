@@ -14,7 +14,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: backup
-              image: postgres:16-alpine
+              image: google/cloud-sdk:alpine
               command:
                 - /bin/sh
                 - -ec
@@ -32,7 +32,7 @@ spec:
                   }
 
                   echo "--- Instalando dependencias ---"
-                  apk add --no-cache curl coreutils google-cloud-sdk
+                  apk add --no-cache postgresql16-client curl
 
                   echo "--- PostgreSQL Dump ---"
                   DUMP_FILE="/tmp/depfund_db_$(date +%Y%m%d_%H%M%S).dump"
