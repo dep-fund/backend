@@ -45,6 +45,8 @@ from app.routes.project_image.admin_project_image import router as admin_project
 from app.routes.blockchain.marketplace import router as marketplace_router
 from app.routes.token import router as token_router
 from app.routes.blockchain.admin_dividends import router as admin_dividends
+from app.routes.publication import router as publications_router
+from app.routes.trades import router as trades_router
 
 logger = logging.getLogger(__name__)
 setup_logging()
@@ -104,6 +106,8 @@ api_v1.include_router(standard_project_image)
 api_v1.include_router(wallet_router)
 api_v1.include_router(marketplace_router)
 api_v1.include_router(token_router)
+api_v1.include_router(publications_router)
+api_v1.include_router(trades_router)
 
 # admin
 api_v1.include_router(admin_auth_router)
@@ -129,6 +133,8 @@ app.include_router(standard_project_image)
 app.include_router(wallet_router)
 app.include_router(marketplace_router)
 app.include_router(token_router)
+app.include_router(publications_router)
+app.include_router(trades_router)
 
 # admin
 app.include_router(admin_auth_router)

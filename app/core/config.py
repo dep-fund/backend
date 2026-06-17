@@ -87,8 +87,20 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        return URL.create(
+        base = URL.create(
             "postgresql+asyncpg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=self.POSTGRES_DB,
+        ).render_as_string(hide_password=False)
+        return base + "?ssl=disable"
+
+    @property
+    def SYNC_DATABASE_URL(self) -> str:
+        return URL.create(
+            "postgresql+psycopg2",
             username=self.POSTGRES_USER,
             password=self.POSTGRES_PASSWORD,
             host=self.POSTGRES_HOST,
