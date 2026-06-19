@@ -29,7 +29,7 @@ def get_engine():
         _engine = create_async_engine(
             settings.DATABASE_URL,
             echo=getattr(settings, "LOG_SQL_QUERIES", False),
-            connect_args={"ssl": "require"},
+            connect_args={"ssl": "prefer"},
             pool_pre_ping=True,
             pool_recycle=300,
         )

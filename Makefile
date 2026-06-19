@@ -1,6 +1,6 @@
 .PHONY: dev-up dev-down dev-logs dev-db \
         infra-init infra-plan infra-apply infra-destroy \
-        gke-connect gke-build gke-secrets gke-deploy gke-all gke-logs gke-logs-migrate \
+        gke-connect gke-build gke-secrets gke-secrets-upload gke-deploy gke-all gke-logs gke-logs-migrate \
         gke-ingress-nginx gke-cert-manager gke-cluster-issuer gke-ingress-setup
 
 # ─────────────────────────────────────────────
@@ -87,26 +87,55 @@ gke-build:
 
 
 # ─────────────────────────────────────────────
-# Secrets desde ./secrets/ (sin tocar GitHub)
+# Secrets (GCP Secret Manager + ESO)
 # ─────────────────────────────────────────────
 
+SECRETS_DIR := secrets
+SECRET_NAMES := admin-secret-key cloudinary-api-key cloudinary-api-secret \
+                cloudinary-cloud-name deployer-private-key google-client-id \
+                google-client-secret google-redirect-uri postgres-db \
+                postgres-password postgres-user rpc-url secret-key sender-password
+
 gke-secrets:
+	@echo "Los secrets se gestionan via GCP Secret Manager + ESO"
+	@echo ""
+	@echo "Para subir/actualizar todos los secrets desde ./secrets/:"
+	@for name in $(SECRET_NAMES); do \
+	  file="${SECRETS_DIR}/$$(echo $$name | tr -d '\n').txt"; \
+	  actual_file="${SECRETS_DIR}/$$(echo $$name | tr '-' '_').txt"; \
+	  if [ -f "$$actual_file" ]; then \
+	    echo "  gcloud secrets versions add depfund-$$name --data-file=$$actual_file"; \
+	  fi; \
+	done
+	@echo ""
+	@echo "O ejecutar: make gke-secrets-upload"
+
+gke-secrets-upload:
 	kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -; \
-	S=secrets; \
-	kubectl create secret generic depfund-secrets -n ${NAMESPACE} \
-		--from-literal=POSTGRES_USER="$$(cat $$S/postgres_user.txt)" \
-		--from-literal=POSTGRES_PASSWORD="$$(cat $$S/postgres_password.txt)" \
-		--from-literal=POSTGRES_DB="$$(cat $$S/postgres_db.txt)" \
-		--from-literal=SECRET_KEY="$$(cat $$S/secret_key.txt)" \
-		--from-literal=ADMIN_SECRET_KEY="$$(cat $$S/admin_secret_key.txt)" \
-		--from-literal=SENDER_PASSWORD="$$(cat $$S/sender_password.txt)" \
-		--from-literal=GOOGLE_CLIENT_ID="$$(cat $$S/google_client_id.txt)" \
-		--from-literal=GOOGLE_CLIENT_SECRET="$$(cat $$S/google_client_secret.txt)" \
-		--from-literal=CLOUDINARY_CLOUD_NAME="$$(cat $$S/cloudinary_cloud_name.txt)" \
-		--from-literal=CLOUDINARY_API_KEY="$$(cat $$S/cloudinary_api_key.txt)" \
-		--from-literal=CLOUDINARY_API_SECRET="$$(cat $$S/cloudinary_api_secret.txt)" \
-		--from-literal=DEPLOYER_PRIVATE_KEY="$$(cat $$S/deployer_private_key.txt)" \
-		--dry-run=client -o yaml | kubectl apply -f -
+	S=$(SECRETS_DIR); \
+	for pair in \
+	  admin-secret-key:admin_secret_key \
+	  cloudinary-api-key:cloudinary_api_key \
+	  cloudinary-api-secret:cloudinary_api_secret \
+	  cloudinary-cloud-name:cloudinary_cloud_name \
+	  deployer-private-key:deployer_private_key \
+	  google-client-id:google_client_id \
+	  google-client-secret:google_client_secret \
+	  google-redirect-uri:google_redirect_uri \
+	  postgres-db:postgres_db \
+	  postgres-password:postgres_password \
+	  postgres-user:postgres_user \
+	  rpc-url:rpc_url \
+	  secret-key:secret_key \
+	  sender-password:sender_password; do \
+	  name="depfund-$${pair%%:*}"; \
+	  file="$$S/$${pair#*:}.txt"; \
+	  if [ -f "$$file" ]; then \
+	    echo "  📤 $$name"; \
+	    gcloud secrets versions add "$$name" --data-file="$$file" --project=$(PROJECT) 2>/dev/null || \
+	    gcloud secrets create "$$name" --data-file="$$file" --project=$(PROJECT); \
+	  fi; \
+	done
 
 
 # ─────────────────────────────────────────────
@@ -116,6 +145,9 @@ gke-secrets:
 gke-deploy:
 	kubectl apply -f kubernetes/configmap.yaml; \
 	kubectl apply -f kubernetes/backup-sa.yaml; \
+	kubectl apply -f kubernetes/postgres-statefulset.yaml; \
+	kubectl apply -f kubernetes/secret-store.yaml; \
+	kubectl apply -f kubernetes/external-secret.yaml; \
 	kubectl apply -f kubernetes/deployment.yaml; \
 	kubectl apply -f kubernetes/service.yaml; \
 	kubectl apply -f kubernetes/hpa.yaml; \

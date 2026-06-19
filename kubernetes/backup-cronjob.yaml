@@ -4,7 +4,7 @@ metadata:
   name: depfund-backup
   namespace: depfund
 spec:
-  schedule: "0 3 * * 0"
+  schedule: "0 3 * * *"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -31,8 +31,10 @@ spec:
                         "$SENDER_EMAIL" "$NOTIFY_EMAIL" "$status" "$msg")
                   }
 
+                  ERRORS=""
+
                   echo "--- Instalando dependencias ---"
-                  apk add --no-cache postgresql16-client curl
+                  apk add --no-cache postgresql16-client curl jq
 
                   echo "--- PostgreSQL Dump ---"
                   DUMP_FILE="/tmp/depfund_db_$(date +%Y%m%d_%H%M%S).dump"
@@ -40,27 +42,57 @@ spec:
                     -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDB \
                     --no-owner --no-acl \
                     -F c \
-                    > "$DUMP_FILE"
+                    > "$DUMP_FILE" || ERRORS="${ERRORS}DB dump failed. "
 
                   DUMP_SIZE=$(du -sh "$DUMP_FILE" | cut -f1)
-
-                  echo "--- Subiendo a GCS ---"
-                  gsutil cp "$DUMP_FILE" gs://$BUCKET/db/
-
-                  echo "--- Limpiando ---"
+                  echo "Subiendo DB dump a gs://$BUCKET/db/"
+                  gsutil cp "$DUMP_FILE" gs://$BUCKET/db/ || ERRORS="${ERRORS}DB upload failed. "
                   rm -f "$DUMP_FILE"
 
-                  notify "Exitoso" "Backup completado exitosamente.\nFecha: $(date)\nTamaño: ${DUMP_SIZE}\nBucket: gs://${BUCKET}/db/"
-                  echo "Backup completado: $(date)"
+                  echo "--- Cloudinary Assets Backup ---"
+                  if [ -n "${CLOUDINARY_CLOUD_NAME:-}" ] && [ -n "${CLOUDINARY_API_KEY:-}" ] && [ -n "${CLOUDINARY_API_SECRET:-}" ]; then
+                    CLOUD_DIR="/tmp/cloudinary_$(date +%Y%m%d_%H%M%S)"
+                    mkdir -p "$CLOUD_DIR"
+
+                    echo "Listando recursos de Cloudinary..."
+                    curl -s -u "${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}" \
+                      "https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/resources/image?max_results=500" \
+                      | jq -r '.resources[] | .secure_url' > /tmp/cloudinary_urls.txt
+
+                    TOTAL=$(wc -l < /tmp/cloudinary_urls.txt)
+                    COUNT=0
+                    echo "Descargando $TOTAL imagenes..."
+                    while IFS= read -r url; do
+                      filename="$(basename "${url%%\?*}")"
+                      curl -s -o "${CLOUD_DIR}/${filename}" "$url" || ERRORS="${ERRORS}Cloudinary download failed for $filename. "
+                      COUNT=$((COUNT + 1))
+                    done < /tmp/cloudinary_urls.txt
+
+                    echo "Comprimiendo y subiendo a GCS..."
+                    tar -czf /tmp/cloudinary.tgz -C "$CLOUD_DIR" .
+                    gsutil cp /tmp/cloudinary.tgz gs://$BUCKET/cloudinary/backup_$(date +%Y%m%d).tgz || ERRORS="${ERRORS}Cloudinary upload failed. "
+                    rm -rf "$CLOUD_DIR" /tmp/cloudinary_urls.txt /tmp/cloudinary.tgz
+                  else
+                    echo "Cloudinary no configurado, skipping assets"
+                  fi
+
+                  echo "--- Limpiando ---"
+                  if [ -z "$ERRORS" ]; then
+                    notify "Exitoso" "Backup completado exitosamente.\nFecha: $(date)\nDB: ${DUMP_SIZE}"
+                    echo "Backup completado: $(date)"
+                  else
+                    notify "Fallos" "Backup con errores:\n${ERRORS}"
+                    echo "Backup con errores: ${ERRORS}"
+                  fi
               env:
                 - name: PGHOST
-                  value: "ep-square-hill-an7t5zyb-pooler.c-6.us-east-1.aws.neon.tech"
+                  value: "postgres"
                 - name: PGPORT
                   value: "5432"
                 - name: PGDB
                   valueFrom:
-                    configMapKeyRef:
-                      name: depfund-config
+                    secretKeyRef:
+                      name: depfund-secrets
                       key: POSTGRES_DB
                 - name: PGUSER
                   valueFrom:
@@ -84,10 +116,25 @@ spec:
                     secretKeyRef:
                       name: depfund-secrets
                       key: SENDER_PASSWORD
+                - name: CLOUDINARY_CLOUD_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: depfund-secrets
+                      key: CLOUDINARY_CLOUD_NAME
+                - name: CLOUDINARY_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: depfund-secrets
+                      key: CLOUDINARY_API_KEY
+                - name: CLOUDINARY_API_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: depfund-secrets
+                      key: CLOUDINARY_API_SECRET
               resources:
                 requests:
-                  cpu: "200m"
-                  memory: "256Mi"
-                limits:
-                  cpu: "500m"
+                  cpu: "300m"
                   memory: "512Mi"
+                limits:
+                  cpu: "1000m"
+                  memory: "1024Mi"

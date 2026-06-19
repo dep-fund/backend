@@ -57,31 +57,17 @@ echo "▸ Namespace"
 kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
 # ─── 5. Secrets ──────────────────────────────
-echo "▸ Secrets desde ./secrets/"
-SECRETS_DIR="${ROOT_DIR}/secrets"
-if [ -d "${SECRETS_DIR}" ]; then
-  kubectl create secret generic depfund-secrets -n "${NAMESPACE}" \
-    --from-literal=POSTGRES_USER="$(cat "${SECRETS_DIR}/postgres_user.txt")" \
-    --from-literal=POSTGRES_PASSWORD="$(cat "${SECRETS_DIR}/postgres_password.txt")" \
-    --from-literal=POSTGRES_DB="$(cat "${SECRETS_DIR}/postgres_db.txt")" \
-    --from-literal=SECRET_KEY="$(cat "${SECRETS_DIR}/secret_key.txt")" \
-    --from-literal=ADMIN_SECRET_KEY="$(cat "${SECRETS_DIR}/admin_secret_key.txt")" \
-    --from-literal=SENDER_PASSWORD="$(cat "${SECRETS_DIR}/sender_password.txt")" \
-    --from-literal=GOOGLE_CLIENT_ID="$(cat "${SECRETS_DIR}/google_client_id.txt")" \
-    --from-literal=GOOGLE_CLIENT_SECRET="$(cat "${SECRETS_DIR}/google_client_secret.txt")" \
-    --from-literal=CLOUDINARY_CLOUD_NAME="$(cat "${SECRETS_DIR}/cloudinary_cloud_name.txt")" \
-    --from-literal=CLOUDINARY_API_KEY="$(cat "${SECRETS_DIR}/cloudinary_api_key.txt")" \
-    --from-literal=CLOUDINARY_API_SECRET="$(cat "${SECRETS_DIR}/cloudinary_api_secret.txt")" \
-    --from-literal=DEPLOYER_PRIVATE_KEY="$(cat "${SECRETS_DIR}/deployer_private_key.txt")" \
-    --dry-run=client -o yaml | kubectl apply -f -
-else
-  echo "  ⚠️  Directorio ./secrets/ no encontrado. Secrets no actualizados."
-fi
+echo "▸ Secrets gestionados por GCP Secret Manager + ESO"
+echo "  Para actualizar un secreto:"
+echo "    gcloud secrets versions add depfund-<name> --data-file=secrets/<file>.txt"
 
 # ─── 6. Apply manifests ──────────────────────
 echo "▸ Apply manifests"
 kubectl apply -f "${ROOT_DIR}/kubernetes/configmap.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/backup-sa.yaml"
+kubectl apply -f "${ROOT_DIR}/kubernetes/postgres-statefulset.yaml"
+kubectl apply -f "${ROOT_DIR}/kubernetes/secret-store.yaml"
+kubectl apply -f "${ROOT_DIR}/kubernetes/external-secret.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/deployment.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/service.yaml"
 kubectl apply -f "${ROOT_DIR}/kubernetes/hpa.yaml"
@@ -98,5 +84,5 @@ echo ""
 echo "═══════════════════════════════════════════"
 echo "  Deploy completado ✅"
 echo "  Ingress: https://depfund.34.58.61.129.sslip.io"
-echo "  LB IP: Ejecutar 'tofu output lb_ip_address' desde infrastructure/environments/prod"
+echo "  Para ver el estado: kubectl get pods -n depfund"
 echo "═══════════════════════════════════════════"

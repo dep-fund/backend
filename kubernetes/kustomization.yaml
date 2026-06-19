@@ -5,6 +5,9 @@ resources:
   - namespace.yaml
   - backup-sa.yaml
   - configmap.yaml
+  - secret-store.yaml
+  - postgres-statefulset.yaml
+  - external-secret.yaml
   - deployment.yaml
   - service.yaml
   - hpa.yaml

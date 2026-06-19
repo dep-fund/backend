@@ -23,3 +23,11 @@ resource "google_service_account_iam_binding" "backup_sa_wi" {
     "serviceAccount:${var.project_id}.svc.id.goog[depfund/backup-sa]",
   ]
 }
+
+resource "google_service_account_iam_binding" "gke_sa_eso" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${var.cluster_sa}"
+  role               = "roles/iam.workloadIdentityUser"
+  members = [
+    "serviceAccount:${var.project_id}.svc.id.goog[external-secrets/external-secrets]",
+  ]
+}

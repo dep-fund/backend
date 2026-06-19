@@ -13,12 +13,13 @@ resource "google_storage_bucket" "backups" {
       age = 30
     }
     action {
-      type = "Delete"
+      type = "SetStorageClass"
+      storage_class = "ARCHIVE"
     }
   }
   lifecycle_rule {
     condition {
-      num_newer_versions = 3
+      age = 90
     }
     action {
       type = "Delete"

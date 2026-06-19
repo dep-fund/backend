@@ -95,3 +95,9 @@ resource "google_project_iam_member" "gke_sa_artifact_reader" {
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${google_service_account.gke_sa.email}"
 }
+
+resource "google_project_iam_member" "gke_sa_secretmanager" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
+}

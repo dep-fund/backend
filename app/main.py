@@ -107,6 +107,3 @@ app.include_router(admin_project_document)
 app.include_router(admin_project_images)
 
 app.include_router(api_v1)
-
-app.mount("/admin", StaticFiles(directory="static/backoffice", html=True), name="backoffice")
-app.mount("/", StaticFiles(directory="static/frontend", html=True), name="frontend")
