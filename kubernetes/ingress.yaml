@@ -15,10 +15,24 @@ spec:
     - host: depfund.34.58.61.129.sslip.io
       http:
         paths:
-          - path: /
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: depfund-backoffice
+                port:
+                  number: 80
+          - path: /api
             pathType: Prefix
             backend:
               service:
                 name: depfund-backend
                 port:
                   number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: depfund-frontend
+                port:
+                  number: 80

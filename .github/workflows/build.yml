@@ -26,33 +26,7 @@ jobs:
       - name: Checkout backend
         uses: actions/checkout@v4
 
-      - name: Checkout frontend
-        uses: actions/checkout@v4
-        with:
-          repository: dep-fund/frontend
-          path: frontend-repo
 
-      - name: Checkout backoffice
-        uses: actions/checkout@v4
-        with:
-          repository: dep-fund/backoffice
-          path: backoffice-repo
-
-      - name: Build frontend
-        run: |
-          cd frontend-repo
-          npm ci
-          npm run build
-          mkdir -p ../frontend-dist
-          cp -r dist/* ../frontend-dist/
-
-      - name: Build backoffice
-        run: |
-          cd backoffice-repo
-          npm ci
-          npm run build
-          mkdir -p ../backoffice-dist
-          cp -r dist/* ../backoffice-dist/
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2

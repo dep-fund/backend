@@ -30,6 +30,8 @@ def get_engine():
             settings.DATABASE_URL,
             echo=getattr(settings, "LOG_SQL_QUERIES", False),
             connect_args={"ssl": "require"},
+            pool_pre_ping=True,
+            pool_recycle=300,
         )
     return _engine
 

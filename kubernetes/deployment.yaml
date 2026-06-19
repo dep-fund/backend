@@ -9,7 +9,7 @@ metadata:
     argocd-image-updater.argoproj.io/image-list: backend=us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backend
     argocd-image-updater.argoproj.io/backend.update-strategy: latest
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -67,21 +67,21 @@ spec:
               memory: "512Mi"
           startupProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 15
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10

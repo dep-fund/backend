@@ -1,6 +1,6 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+
 from app.core.exception_handlers import setup_exception_handlers
 from app.routes.auth.oauth import router as oauth_router
 from app.routes.health import router as health_router
@@ -82,7 +82,7 @@ api_v1.include_router(admin_project_advance)
 api_v1.include_router(admin_project_document)
 api_v1.include_router(admin_project_images)
 
-app.include_router(health_router)
+api_v1.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(oauth_router)
 app.include_router(users_router)

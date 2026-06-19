@@ -11,3 +11,7 @@ resources:
   - backup-cronjob.yaml
   - ingress.yaml
   - certificate.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+  - backoffice-deployment.yaml
+  - backoffice-service.yaml
