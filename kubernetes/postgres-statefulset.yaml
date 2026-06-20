@@ -69,14 +69,14 @@ spec:
             exec:
               command: ["pg_isready", "-U", "postgres"]
             initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 15
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 5
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
   volumeClaimTemplates:
     - metadata:
         name: data
