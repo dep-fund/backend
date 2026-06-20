@@ -39,7 +39,7 @@ resource "google_container_cluster" "cluster" {
   deletion_protection = false
 
   node_pool {
-    name = "default-pool"
+    name = "primary-pool"
 
     node_count = var.node_count
 

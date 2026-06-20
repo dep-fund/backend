@@ -30,11 +30,11 @@ variable "subnet_cidr" {
 variable "node_machine_type" {
   description = "GKE node machine type"
   type        = string
-  default     = "e2-small"
+  default     = "e2-standard-2"
 }
 
 variable "node_count" {
-  description = "Initial node count"
+  description = "Initial node count (autoscaler manages actual count)"
   type        = number
   default     = 1
 }
