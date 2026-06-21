@@ -32,69 +32,133 @@ class Project(Base):
     id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+
+    total_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        nullable=False
+    )
+
     state: Mapped[ProjectState] = mapped_column(
         SAEnum(ProjectState, name="project_state"),
         nullable=False,
         default=ProjectState.PENDING,
     )
-    min_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+
+    min_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        nullable=False
+    )
 
     risk: Mapped[RiskLevel | None] = mapped_column(
-        SAEnum(RiskLevel, name="risk_level"), nullable=True
+        SAEnum(RiskLevel, name="risk_level"),
+        nullable=True
     )
 
-    annual_expenses: Mapped[Decimal | None] = mapped_column(
-        Numeric(12, 2), nullable=True
+    annual_expenses: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        nullable=False
     )
 
-    annual_gross_profit: Mapped[Decimal | None] = mapped_column(
-        Numeric(12, 2), nullable=True
+    annual_gross_profit: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        nullable=False
     )
 
-    roi: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    roi: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2),
+        nullable=True
+    )
 
     annual_benefits: Mapped[Decimal | None] = mapped_column(
-        Numeric(12, 2), nullable=True
+        Numeric(12, 2),
+        nullable=True
     )
-    suffix: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    ubication: Mapped[str] = mapped_column(String(255), nullable=True)
-    estimated_development_days: Mapped[int | None] = mapped_column(nullable=True)
-    dividend_address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    offering_address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    suffix: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False
+    )
+
+    ubication: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    estimated_development_days: Mapped[int | None] = mapped_column(
+        nullable=True
+    )
+
+    dividend_address: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    offering_address: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now()
     )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
     )
+
     user_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("USER.id"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("USER.id"),
+        nullable=False
     )
-    user: Mapped["User"] = relationship("User", back_populates="projects")
+
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="projects"
+    )
+
     categories: Mapped[list["Category"]] = relationship(
-        "Category", secondary=CategoryProject.__table__, back_populates="projects"
+        "Category",
+        secondary=CategoryProject.__table__,
+        back_populates="projects"
     )
+
     images: Mapped[list["ProjectImage"]] = relationship(
-        "ProjectImage", back_populates="project"
+        "ProjectImage",
+        back_populates="project"
     )
+
     documents: Mapped[list["ProjectDocument"]] = relationship(
-        "ProjectDocument", back_populates="project"
+        "ProjectDocument",
+        back_populates="project"
     )
+
     advances: Mapped[list["ProjectAdvance"]] = relationship(
-        "ProjectAdvance", back_populates="project"
+        "ProjectAdvance",
+        back_populates="project"
     )
+
     evaluations: Mapped[list["ProjectEvaluation"]] = relationship(
-        "ProjectEvaluation", back_populates="project"
+        "ProjectEvaluation",
+        back_populates="project"
     )
+
     transactions: Mapped[list["Transaction"]] = relationship(
-        "Transaction", back_populates="project"
+        "Transaction",
+        back_populates="project"
     )
+
     token_project: Mapped[Optional["TokenProject"]] = relationship(
-        "TokenProject", back_populates="project", uselist=False
+        "TokenProject",
+        back_populates="project",
+        uselist=False
     )
