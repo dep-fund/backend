@@ -131,7 +131,7 @@ gke-secrets-upload:
 	  name="depfund-$${pair%%:*}"; \
 	  file="$$S/$${pair#*:}.txt"; \
 	  if [ -f "$$file" ]; then \
-	    echo "  📤 $$name"; \
+	    echo "  Uploading $$name"; \
 	    gcloud secrets versions add "$$name" --data-file="$$file" --project=$(PROJECT) 2>/dev/null || \
 	    gcloud secrets create "$$name" --data-file="$$file" --project=$(PROJECT); \
 	  fi; \

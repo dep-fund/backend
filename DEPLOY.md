@@ -1,31 +1,31 @@
-# Guía de despliegue — DepFund en GCP
+# Guia de despliegue -- DepFund en GCP
 
-## Índice
+## Indice
 
 1. [Prerrequisitos](#1-prerrequisitos)
-2. [Configuración inicial de GCP](#2-configuración-inicial-de-gcp)
-3. [Workload Identity Federation (GitHub ↔ GCP)](#3-workload-identity-federation-github--gcp)
+2. [Configuracion inicial de GCP](#2-configuracion-inicial-de-gcp)
+3. [Workload Identity Federation (GitHub GCP)](#3-workload-identity-federation-github--gcp)
 4. [Arquitectura de red](#4-arquitectura-de-red)
-5. [OpenTofu — Infraestructura](#5-opentofu--infraestructura)
-6. [Frontend — Deploy a GCS](#6-frontend--deploy-a-gcs)
-7. [GitHub Actions — Variables y Secrets](#7-github-actions--variables-y-secrets)
+5. [OpenTofu -- Infraestructura](#5-opentofu--infraestructura)
+6. [Frontend y Backoffice -- Deploy a GKE](#6-frontend-y-backoffice--deploy-a-gke)
+7. [GitHub Actions -- Variables y Secrets](#7-github-actions--variables-y-secrets)
 8. [Despliegue del backend](#8-despliegue-del-backend)
-9. [Verificación](#9-verificación)
-10. [Scripts de backup](#10-scripts-de-backup)
+9. [Verificacion](#9-verificacion)
+10. [Backups](#10-backups)
 11. [Teardown](#11-teardown)
-12. [Anexo: Comandos rápidos](#12-anexo-comandos-rápidos)
+12. [Anexo: Comandos rapidos](#12-anexo-comandos-rapidos)
 13. [Costos estimados](#13-costos-estimados)
 
 ---
 
 ## 1. Prerrequisitos
 
-| Herramienta | Versión mínima | Instalación |
+| Herramienta | Version minima | Instalacion |
 |---|---|---|
-| [OpenTofu](https://opentofu.org/docs/intro/install/) | ≥ 1.7 | `brew install opentofu` / `choco install opentofu` |
-| [gcloud CLI](https://cloud.google.com/sdk/docs/install) | — | `brew install --cask google-cloud-sdk` |
-| [kubectl](https://kubernetes.io/docs/tasks/tools/) | — | `gcloud components install kubectl` |
-| [GitHub CLI](https://cli.github.com/) (opcional) | — | `brew install gh` |
+| [OpenTofu](https://opentofu.org/docs/intro/install/) | >= 1.7 | `brew install opentofu` / `choco install opentofu` |
+| [gcloud CLI](https://cloud.google.com/sdk/docs/install) | -- | `brew install --cask google-cloud-sdk` |
+| [kubectl](https://kubernetes.io/docs/tasks/tools/) | -- | `gcloud components install kubectl` |
+| [GitHub CLI](https://cli.github.com/) (opcional) | -- | `brew install gh` |
 
 ```bash
 # Verificar instalaciones
@@ -34,16 +34,16 @@ gcloud --version
 kubectl version --client
 ```
 
-Además necesitás:
-- Una cuenta de GCP con **facturación habilitada**
-- Un repositorio en GitHub con el código del backend
+Ademas necesitas:
+- Una cuenta de GCP con facturacion habilitada
+- Un repositorio en GitHub con el codigo del backend
 - Archivos de secrets en `backend/secrets/` (ver `secrets/` directorio)
-- Credenciales de **Google OAuth** (client id, client secret)
-- **RPC URL** de tu red blockchain (Alchemy / Infura / propia)
+- Credenciales de Google OAuth (client id, client secret)
+- RPC URL de tu red blockchain (Alchemy / Infura / propia)
 
 ---
 
-## 2. Configuración inicial de GCP
+## 2. Configuracion inicial de GCP
 
 ### 2.1 Usar proyecto existente
 
@@ -79,7 +79,7 @@ echo "Bucket creado: gs://$BUCKET"
 
 ### 2.4 Verificar backend de OpenTofu
 
-El archivo `infrastructure/backend.tf` ya está configurado con:
+El archivo `infrastructure/backend.tf` ya esta configurado con:
 
 ```hcl
 backend "gcs" {
@@ -90,9 +90,9 @@ backend "gcs" {
 
 ---
 
-## 3. Workload Identity Federation (GitHub ↔ GCP)
+## 3. Workload Identity Federation (GitHub GCP)
 
-Esto permite que GitHub Actions se autentique en GCP **sin keys de servicio**. Es más seguro y es requerido por el pipeline.
+Esto permite que GitHub Actions se autentique en GCP sin keys de servicio.
 
 ### 3.1 Crear el pool y provider
 
@@ -166,7 +166,7 @@ gcloud iam service-accounts add-iam-policy-binding $SA_EMAIL \
 
 ### 3.4 Guardar los valores para GitHub
 
-Ejecutá estos comandos para obtener los valores que vas a configurar en GitHub:
+Ejecuta estos comandos para obtener los valores que vas a configurar en GitHub:
 
 ```bash
 echo "=== GitHub Repository Variables ==="
@@ -180,42 +180,57 @@ echo "GCP_WIF_PROVIDER:       $(gcloud iam workload-identity-pools providers des
 echo "GCP_SERVICE_ACCOUNT:    $SA_EMAIL"
 ```
 
-> Copiá estos tres valores. Los vas a necesitar en el [paso 5](#5-github-actions--variables-y-secrets).
+> Copia estos tres valores. Los vas a necesitar en el [paso 7](#7-github-actions--variables-y-secrets).
 
-> **Atención al repositorio:** El WIF se configuró para `dep-fund/backend`. Si tu repo en GitHub tiene otro nombre, ajustá la variable `REPO` en el paso 3.1.
+> **Atencion al repositorio:** El WIF se configuro para `dep-fund/backend`. Si tu repo en GitHub tiene otro nombre, ajusta la variable `REPO` en el paso 3.1.
 
 ---
 
 ## 4. Arquitectura de red
 
-DepFund usa un **único Load Balancer HTTP** gestionado por OpenTofu que rutea según la URL:
+DepFund usa un **nginx Ingress** dentro del cluster GKE que rutea segun la URL:
 
-| Ruta | Destino | Descripción |
+| Ruta | Destino | Descripcion |
 |---|---|---|
-| `/*` | Frontend GCS bucket | SPA pública (catch-all) |
-| `/admin/*` | Backoffice GCS bucket | Panel admin SPA |
-| `/api/*` | Backend GKE (vía NEG) | API REST |
-| `/docs`, `/openapi.json`, `/redoc` | Backend GKE | Documentación Swagger |
+| `/` | Frontend SPA (Deployment GKE, puerto 80) | SPA publica (catch-all) |
+| `/admin` | Backoffice SPA (Deployment GKE, puerto 80) | Panel admin |
+| `/api` | Backend API (Deployment GKE, puerto 8000) | API REST |
+| `/docs`, `/openapi.json`, `/redoc` | Backend GKE | Documentacion Swagger |
 | `/health` | Backend GKE | Health check |
 
-### 4.1 Flujo de tráfico
+### 4.1 Flujo de trafico
 
 ```
-Usuario → LB (IP estática global)
-         ├── /*        → GCS bucket: prod-depfund-frontend
-         ├── /admin/*  → GCS bucket: prod-depfund-backoffice
-         └── /api/*    → GKE NEG → backend pods (puerto 8000)
+Usuario -> nginx Ingress (K8s, TLS via cert-manager)
+           ├── /          -> depfund-frontend (Deployment GKE, puerto 80)
+           ├── /admin     -> depfund-backoffice (Deployment GKE, puerto 80)
+           └── /api       -> depfund-backend (Deployment GKE, puerto 8000)
+                               -> postgres (StatefulSet GKE, puerto 5432)
 ```
 
-> El **GKE Ingress anterior** fue reemplazado por este LB. Ver sección de migración.
+### 4.2 TLS
+
+El TLS se maneja con **cert-manager** + **Let's Encrypt** (ClusterIssuer `letsencrypt-prod`).
+El certificado se emite para el dominio `depfund.34.58.61.129.sslip.io`.
+
+Para instalar nginx-ingress y cert-manager por primera vez:
+
+```bash
+make gke-ingress-setup
+```
+
+Esto instala:
+- `nginx-ingress` via Helm en namespace `nginx-ingress`
+- `cert-manager` via Helm en namespace `cert-manager`
+- ClusterIssuer `letsencrypt-prod`
 
 ---
 
-## 5. OpenTofu — Infraestructura
+## 5. OpenTofu -- Infraestructura
 
 ### 5.1 Configurar variables
 
-El archivo `infrastructure/environments/prod/terraform.tfvars` ya está configurado:
+El archivo `infrastructure/environments/prod/terraform.tfvars` ya esta configurado:
 
 ```hcl
 gcp_project_id = "depfund-498022-d7"
@@ -236,56 +251,24 @@ tofu apply
 
 Esto crea:
 - VPC + subnet + NAT + firewall rules
-- GKE Standard cluster (1 nodo spot `e2-small`, autoescala hasta 3)
+- GKE Standard cluster (1 nodo spot `e2-standard-2`, autoescala hasta 3)
 - Artifact Registry repository (docker images)
-- Cloud SQL (PostgreSQL 16, Private IP, backups automáticos, PITR 7 días)
-- GCS bucket para backups
-- **GCS buckets para frontend y backoffice** (públicos, static website)
-- **HTTP Load Balancer** (reemplaza el GKE ingress, usa la IP estática existente)
-- Service Accounts (cluster SA + backup SA + Cloud SQL)
+- GCS bucket para backups (retencion: ARCHIVE a los 30 dias, DELETE a los 90)
+- Service Accounts (cluster SA + backup SA)
 
 El `apply` tarda **~8-12 minutos**.
 
-> **Nota sobre el NEG:** El módulo LB necesita el `backend_neg_id` (self-link del NEG de GKE).
-> El workflow de CI (`deploy.yml`) resuelve esto automáticamente: aplica los manifests de K8s,
-> extrae el NEG ID del Service, lo escribe en `terraform.tfvars` y ejecuta `tofu apply`.
-> Si es la primera vez, aplicá primero el plan sin el LB, deployá la app al GKE,
-> y luego el workflow sincronizará el LB automáticamente.
-
-### 5.3 Configurar el NEG de GKE (Network Endpoint Group)
-
-El LB enruta al backend GKE mediante un NEG creado automáticamente por la annotation
-`cloud.google.com/neg` en el Service. El workflow de CI lo resuelve automático.
-Solo si necesitás hacerlo manual:
-
-```bash
-# 1. Aplicar el service con la annotation
-kubectl apply -f kubernetes/service.yaml
-
-# 2. Esperar a que GKE cree el NEG
-sleep 15
-
-# 3. Obtener el self_link del NEG
-NEG_NAME=$(kubectl get svc depfund-backend -n depfund \
-  -o jsonpath='{.metadata.annotations.cloud\.google\.com/neg-status}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['8000'])")
-gcloud compute network-endpoint-groups describe "$NEG_NAME" \
-  --region=us-central1 --format="value(selfLink)"
-```
-
-### 5.4 Outputs útiles
+### 5.3 Outputs utiles
 
 ```bash
 make infra-output
-# lb_ip_address         → IP del LB
-# frontend_bucket_name  → prod-depfund-frontend
-# backoffice_bucket_name→ prod-depfund-backoffice
-# cloudsql_private_ip   → IP privada de Cloud SQL
-# cloudsql_db_name      → depfund
-# cloudsql_db_user      → depfund_app
+# cluster_name         -> prod-depfund-cluster
+# cluster_endpoint     -> IP del endpoint del cluster
+# bucket_backups       -> prod-depfund-backups
+# network_name         -> prod-depfund-vpc
 ```
 
-### 5.5 Conectarse al cluster
+### 5.4 Conectarse al cluster
 
 ```bash
 gcloud container clusters get-credentials prod-depfund-cluster \
@@ -295,59 +278,98 @@ gcloud container clusters get-credentials prod-depfund-cluster \
 
 ---
 
-## 6. Frontend — Deploy a GCS
+## 6. Frontend y Backoffice -- Deploy a GKE
 
-Cada frontend se buildea localmente y se sincroniza con su bucket GCS.
-El bucket sirve como static website y el LB lo expone al público.
+Ambos frontends se deployan como **Deployments** dentro del cluster GKE, servidos por el nginx Ingress.
 
-### 6.1 Manual (script)
+### 6.1 Build de imagenes
+
+Cada frontend tiene su propio `Dockerfile` que genera una imagen Nginx sirviendo el bundle estatico.
 
 ```bash
-# Frontend público
+# Backend (incluye frontend-dist y backoffice-dist en el mismo repo)
+cd backend
+make gke-build
+```
+
+Si necesitas rebuildear solo un frontend:
+
+```bash
+# Frontend publico
 cd frontend
-./scripts/deploy.sh
+docker build -t us-central1-docker.pkg.dev/depfund-498022-d7/depfund/frontend:latest .
+docker push us-central1-docker.pkg.dev/depfund-498022-d7/depfund/frontend:latest
 
 # Backoffice
 cd backoffice
-./scripts/deploy.sh
+docker build -t us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backoffice:latest .
+docker push us-central1-docker.pkg.dev/depfund-498022-d7/depfund/backoffice:latest
 ```
 
-### 6.2 GitHub Actions (manual dispatch)
+### 6.2 Deploy de manifests
 
-Desde GitHub → Actions → "Deploy Frontend to GCS" o "Deploy Backoffice to GCS",
-elegí `workflow_dispatch` y el entorno.
+Los Deployments de frontend y backoffice estan en `kubernetes/`:
 
-**Variables de entorno requeridas en GitHub:**
-- `FRONTEND_API_URL` — URL del backend para el frontend público (ej: `http://LB_IP/api`)
-- `BACKOFFICE_API_URL` — URL del backend para el backoffice (ej: `http://LB_IP/api`)
+```bash
+kubectl apply -f kubernetes/frontend-deployment.yaml
+kubectl apply -f kubernetes/frontend-service.yaml
+kubectl apply -f kubernetes/backoffice-deployment.yaml
+kubectl apply -f kubernetes/backoffice-service.yaml
+```
 
-> El prefijo `/api` se agrega automáticamente al `VITE_API_URL` de cada frontend.
-> Ver [Arquitectura de red](#4-arquitectura-de-red).
+Tambien se deployan junto con el backend via `make gke-deploy` o ArgoCD.
+
+### 6.3 ArgoCD (recomendado)
+
+El deploy esta configurado via **ArgoCD** para sincronizacion automatica desde el repo `dep-fund/backend`, path `kubernetes/`, branch `main`.
+
+Configuracion en `kubernetes/argo/application.yaml`:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: depfund-backend
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/dep-fund/backend
+    targetRevision: main
+    path: kubernetes
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: depfund
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Al hacer push a `main`, ArgoCD sincroniza automaticamente.
 
 ---
 
-## 7. GitHub Actions — Variables y Secrets
+## 7. GitHub Actions -- Variables y Secrets
 
 ### 7.1 Repository Variables
 
-En GitHub: **Settings → Secrets and variables → Actions → Variables**
+En GitHub: **Settings > Secrets and variables > Actions > Variables**
 
 | Variable | Valor |
 |---|---|
 | `GCP_PROJECT_ID` | `depfund-498022-d7` |
 | `GCP_WIF_PROVIDER` | (lo obtuviste en 3.4) |
 | `GCP_SERVICE_ACCOUNT` | `github-actions-deploy@depfund-498022-d7.iam.gserviceaccount.com` |
-| `FRONTEND_API_URL` | `http://LB_IP/api` (IP del LB) |
-| `BACKOFFICE_API_URL` | `http://LB_IP/api` (misma IP) |
 
 ### 7.2 Repository Secrets
 
-En GitHub: **Settings → Secrets and variables → Actions → Secrets**
+En GitHub: **Settings > Secrets and variables > Actions > Secrets**
 
-| Secret | Descripción |
-|---|---|---|
-| `POSTGRES_USER` | Usuario de la base de datos Cloud SQL |
-| `POSTGRES_PASSWORD` | Password del usuario Cloud SQL |
+| Secret | Descripcion |
+|---|---|
+| `POSTGRES_USER` | Usuario de la base de datos |
+| `POSTGRES_PASSWORD` | Password del usuario |
 | `POSTGRES_DB` | Nombre de la base de datos (`depfund`) |
 | `SECRET_KEY` | JWT secret key (generar: `openssl rand -hex 32`) |
 | `ADMIN_SECRET_KEY` | Admin guard key |
@@ -357,25 +379,29 @@ En GitHub: **Settings → Secrets and variables → Actions → Secrets**
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
+| `RPC_URL` | RPC endpoint para la blockchain |
 | `DEPLOYER_PRIVATE_KEY` | Private key del deployer blockchain |
 
-### 7.3 ConfigMap values
+### 7.3 Secrets en GCP Secret Manager (via External Secrets Operator)
 
-Antes del primer deploy, editá `kubernetes/configmap.yaml` con los valores correctos que no sean secretos:
+Los secrets se gestionan con **GCP Secret Manager** + **External Secrets Operator**.
+El SecretStore (`kubernetes/secret-store.yaml`) apunta al proyecto GCP, y el ExternalSecret
+(`kubernetes/external-secret.yaml`) mapea los secrets remotos a un Secret de K8s llamado
+`depfund-secrets`.
 
-| Key | Valor |
-|---|---|
-| `POSTGRES_HOST` | Se reemplaza automáticamente por `tofu output cloudsql_private_ip` |
-| `POSTGRES_PORT` | `5432` |
-| `POSTGRES_DB` | `depfund` |
-| `RPC_URL` | URL de tu RPC (Infura/Alchemy) |
-| `GOOGLE_REDIRECT_URI` | Se actualiza automáticamente en el deploy |
+Para subir/actualizar secrets desde los archivos locales en `secrets/`:
+
+```bash
+make gke-secrets-upload
+```
+
+Esto ejecuta `gcloud secrets versions add` para cada archivo en `backend/secrets/`.
 
 ---
 
 ## 8. Despliegue del backend
 
-### 8.1 Local (recomendado)
+### 8.1 Manual (recomendado para devs)
 
 Un solo comando build + push + secrets + deploy:
 
@@ -388,74 +414,86 @@ O paso a paso:
 ```bash
 make gke-connect        # conectar al cluster
 make gke-build          # build + push a Artifact Registry
-make gke-secrets        # crear/actualizar secrets desde ./secrets/
+make gke-secrets        # subir secrets a GCP Secret Manager
 make gke-deploy         # aplicar manifests + rollout
 ```
 
-El script `scripts/deploy.sh` hace lo mismo en un solo archivo.
+`make gke-deploy` aplica los siguientes manifests en orden:
+1. `configmap.yaml`
+2. `backup-sa.yaml`
+3. `postgres-statefulset.yaml`
+4. `secret-store.yaml`
+5. `external-secret.yaml`
+6. `deployment.yaml`
+7. `service.yaml`
+8. `hpa.yaml`
+9. `backup-cronjob.yaml`
+10. `ingress.yaml`
+11. `certificate.yaml`
 
-### 8.2 Automático (GitHub Actions — opcional)
+### 8.2 Automatico (ArgoCD)
 
-Cuando configures el Workload Identity Federation y los secrets en GitHub, al hacer push a `main` se dispara:
+El deploy via ArgoCD aplica automaticamente los manifests del directorio `kubernetes/`
+cada vez que hay un cambio en `main`. No requiere intervencion manual.
 
-```
-CI (test + lint) → Build & Push (Artifact Registry) → Deploy (GKE)
+### 8.3 Base de datos
+
+La base de datos corre como un **StatefulSet** de PostgreSQL 16 dentro del cluster GKE.
+- PVC de 20Gi (storage class `standard-rwo`)
+- Credenciales desde `depfund-secrets` (ExternalSecret)
+- Health checks con `pg_isready`
+
+La configuracion esta en `kubernetes/postgres-statefulset.yaml`.
+
+#### Sincronizacion desde Neon (Testing)
+
+En testing se usa **Neon** como base de datos. Periodicamente hay que sincronizar los
+datos desde Neon al StatefulSet de Postgres en GKE:
+
+```bash
+# 1. Obtener dump desde Neon (consola o CLI de Neon)
+# 2. Copiar el dump al pod de postgres
+kubectl cp ./dump.sql depfund/postgres-0:/tmp/dump.sql
+
+# 3. Restaurar en el StatefulSet
+kubectl exec -n depfund postgres-0 -- psql -U postgres -d depfund -f /tmp/dump.sql
 ```
 
 ---
 
-## 9. Verificación
+## 9. Verificacion
 
-### 9.1 Obtener IP del Load Balancer
+### 9.1 Obtener IP del nginx Ingress
 
 ```bash
-make infra-output
-# lb_ip_address = "X.X.X.X"
+kubectl get svc -n nginx-ingress nginx-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
-O directamente:
+### 9.2 Probar endpoints
 
 ```bash
-gcloud compute addresses describe prod-depfund-ingress-ip \
-  --global --format="value(address)"
-```
+INGRESS_IP=$(kubectl get svc -n nginx-ingress nginx-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
-> La primera vez puede tardar **2-5 minutos** en que GCP provisione el Load Balancer.
-
-### 9.2 Probar frontends
-
-```bash
-LB_IP=$(gcloud compute addresses describe prod-depfund-ingress-ip --global --format="value(address)")
-
-# Frontend público
-curl -sI http://$LB_IP/ | head -1
-# → HTTP/1.1 200 OK
+# Frontend publico
+curl -sI http://$INGRESS_IP/ | head -1
+# -> HTTP/1.1 200 OK
 
 # Backoffice
-curl -sI http://$LB_IP/admin/ | head -1
-# → HTTP/1.1 200 OK
+curl -sI http://$INGRESS_IP/admin | head -1
+# -> HTTP/1.1 200 OK
 
 # API (health check)
-curl -s http://$LB_IP/health
-# → {"status":"ok"}
+curl -s http://$INGRESS_IP/api/health
+# -> {"status":"ok"}
 ```
 
-```bash
-### 9.3 Testear health
-
-```bash
-LB_IP=$(gcloud compute addresses describe prod-depfund-ingress-ip --global --format="value(address)")
-curl -sI http://$LB_IP/health
-# → HTTP/1.1 200 OK
-```
-
-### 9.4 Logs del backend
+### 9.3 Logs del backend
 
 ```bash
 kubectl logs -n depfund -l app=depfund-backend --tail=50 -f
 ```
 
-### 9.5 Escalar manualmente (si hace falta)
+### 9.4 Escalar manualmente
 
 ```bash
 kubectl scale deployment/depfund-backend -n depfund --replicas=3
@@ -463,30 +501,34 @@ kubectl scale deployment/depfund-backend -n depfund --replicas=3
 
 ---
 
-## 10. Scripts de backup
+## 10. Backups
 
-### 10.1 Backup manual
+### 10.1 Backup automatico (CronJob en K8s)
+
+El CronJob en `kubernetes/backup-cronjob.yaml` corre automaticamente:
+- **Schedule**: Domingo 3:00 AM UTC
+- **Que hace**: `pg_dump` + sube a GCS + backup de Cloudinary
+- **Bucket**: `prod-depfund-backups`
+- **Notificacion**: Email a `depfund.soporte@gmail.com` via SMTP
+
+Lifecycle del bucket:
+- A los **30 dias** -> mueve a clase **ARCHIVE**
+- A los **90 dias** -> **DELETE**
+
+### 10.2 Backup manual desde el StatefulSet
 
 ```bash
-# Obtener credenciales desde tofu
-DB_IP=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_private_ip)
-DB_NAME=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_db_name)
-DB_USER=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_db_user)
-DB_PASS=$(tofu -chdir=infrastructure/environments/prod output -raw cloudsql_db_password)
-
-# O ejecutar con el script que lee las credenciales del secret de K8s:
+# Obtener credenciales
 kubectl get secret depfund-secrets -n depfund \
   -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
+
+# Hacer dump desde el pod
+kubectl exec -n depfund postgres-0 -- pg_dump -U postgres -d depfund \
+  --no-owner --no-acl -F c > ./backup_$(date +%Y%m%d).dump
+
+# Subir a GCS
+gsutil cp ./backup_*.dump gs://prod-depfund-backups/db/
 ```
-
-### 10.2 Backup automático (CronJob en K8s)
-
-El CronJob en `kubernetes/backup-cronjob.yaml` corre automáticamente:
-- **Schedule**: Domingo 3:00 AM UTC
-- **Qué hace**: `pg_dump` → sube a GCS
-- **Bucket**: `prod-depfund-backups`
-
-Los dumps se borran del bucket después de **30 días** (lifecycle rule configurada en OpenTofu).
 
 ### 10.3 Restaurar desde backup
 
@@ -494,21 +536,38 @@ Los dumps se borran del bucket después de **30 días** (lifecycle rule configur
 # Listar backups disponibles
 gsutil ls gs://prod-depfund-backups/db/
 
-# Descargar el más reciente
+# Descargar el mas reciente
 BUCKET="prod-depfund-backups"
 LATEST=$(gsutil ls gs://$BUCKET/db/ | tail -1)
 gsutil cp $LATEST ./restore.dump
 
-# Restaurar (requiere acceso a la DB de destino)
-pg_restore -h $TARGET_HOST -U $TARGET_USER -d $TARGET_DB \
-  --no-owner --no-acl ./restore.dump
+# Copiar al pod
+kubectl cp ./restore.dump depfund/postgres-0:/tmp/restore.dump
+
+# Restaurar
+kubectl exec -n depfund postgres-0 -- pg_restore -U postgres -d depfund \
+  --no-owner --no-acl /tmp/restore.dump
+```
+
+### 10.4 Sincronizar desde Neon a GKE
+
+Cuando se necesita actualizar el StatefulSet con datos frescos de Neon:
+
+```bash
+# 1. Exportar desde Neon (CLI o consola web de Neon)
+# 2. Descargar el dump de Neon
+# 3. Copiar al pod
+kubectl cp ./neon_dump.sql depfund/postgres-0:/tmp/neon_dump.sql
+
+# 4. Restaurar
+kubectl exec -n depfund postgres-0 -- psql -U postgres -d depfund -f /tmp/neon_dump.sql
 ```
 
 ---
 
 ## 11. Teardown
 
-Cuando termines las pruebas, destruí todo para no generar costos:
+Cuando termines las pruebas, destrui todo para no generar costos:
 
 ### 11.1 Destruir infraestructura
 
@@ -517,9 +576,9 @@ cd infrastructure/environments/prod
 tofu destroy
 ```
 
-Esto elimina: GKE cluster, VPC, NAT, firewall rules, Artifact Registry, Cloud SQL, GCS buckets.
+Esto elimina: GKE cluster, VPC, NAT, firewall rules, Artifact Registry, GCS buckets.
 
-> El bucket de backups se elimina **solo si está vacío**. Si tiene datos, vacialo primero o borralo manualmente desde la consola.
+> El bucket de backups se elimina solo si esta vacio. Si tiene datos, vacialo primero o borralo manualmente desde la consola.
 
 ### 11.2 Eliminar proyecto (opcional, nuclear)
 
@@ -529,43 +588,45 @@ gcloud projects delete $(gcloud config get project)
 
 ---
 
-## 12. Anexo: Comandos rápidos
+## 12. Anexo: Comandos rapidos
 
 ```bash
-# ─── Infra ──────────────────────────────────────
+# --- Infra -------------------------------------------
 make infra-init          # tofu init
 make infra-plan          # tofu plan
 make infra-apply         # tofu apply
 make infra-destroy       # tofu destroy
-make infra-output        # tofu output (LB IP, buckets, etc.)
+make infra-output        # tofu output (cluster name, bucket, etc.)
 
-# ─── Backend (GKE) ──────────────────────────────
+# --- Backend (GKE) -----------------------------------
 make gke-connect         # conectar al cluster
 make gke-build           # build + push docker image
 make gke-secrets         # inyectar secrets desde ./secrets/
 make gke-deploy          # aplicar manifests + rollout
-make gke-all             # ciclo completo: connect → build → secrets → deploy
+make gke-all             # ciclo completo: connect > build > secrets > deploy
 make gke-logs            # logs del backend
-make gke-logs-migrate    # logs de migración alembic
+make gke-logs-migrate    # logs de migracion alembic
 
-# ─── Frontend (GCS) ─────────────────────────────
-cd frontend && ./scripts/deploy.sh     # deploy manual frontend
-cd backoffice && ./scripts/deploy.sh   # deploy manual backoffice
+# --- Instalacion unica de componentes ----------------
+make gke-ingress-nginx   # instalar nginx-ingress via Helm
+make gke-cert-manager    # instalar cert-manager via Helm
+make gke-cluster-issuer  # aplicar ClusterIssuer de Let's Encrypt
+make gke-ingress-setup   # todo lo anterior en un solo comando
 
-# ─── K8s ────────────────────────────────────────
+# --- K8s ---------------------------------------------
 kubectl get pods -n depfund             # ver pods
+kubectl get svc -n nginx-ingress        # ver IP del Ingress
 kubectl delete namespace depfund        # borrar todo
 kubectl get events -n depfund --sort-by=.lastTimestamp
 
-# ─── LB ─────────────────────────────────────────
-gcloud compute addresses describe prod-depfund-ingress-ip --global
-make infra-output    # lb_ip_address
+# --- Base de datos -----------------------------------
+kubectl exec -n depfund postgres-0 -- psql -U postgres -d depfund
 
-# ─── Logs ──────────────────────────────────────
+# --- Logs --------------------------------------------
 kubectl logs -n depfund -l app=depfund-backend -f
 
-# ─── Test ───────────────────────────────────────
-pytest app/tests/ -v                              # tests locales
+# --- Test --------------------------------------------
+pytest app/tests/ -v
 ```
 
 ---
@@ -574,23 +635,17 @@ pytest app/tests/ -v                              # tests locales
 
 | Recurso | Costo aprox |
 |---|---|
-| GKE Standard (1 nodo spot `e2-small`) | ~$9/mes |
+| GKE Standard (1 nodo spot `e2-standard-2`) | ~$20/mes |
 | Cloud NAT | ~$5/mes |
-| Global HTTP LB + forwarding rule | ~$19/mes |
 | Artifact Registry (1 imagen) | ~$0.50/mes |
-| Cloud SQL (db-f1-micro, 20GB SSD) | ~$25/mes |
-| GCS Backups + Frontend Buckets (pocos GB) | ~$1/mes |
-| **Total estimado** | **~$60/mes** |
+| GCS Backups (pocos GB) | ~$0.50/mes |
+| **Total estimado** | **~$26/mes** |
 
-Si el cluster se usa **solo para pruebas/presentaciones**, hacé `tofu destroy` cuando no lo uses y solo pagás por el storage (GCS + Artifact Registry ≈ $1-2/mes).
+Si el cluster se usa solo para pruebas/presentaciones, hace `tofu destroy` cuando no lo uses y solo pagas por el storage (GCS + Artifact Registry ~$1-2/mes).
 
 ---
 
-> **Próximos pasos recomendados** (cuando hagan falta):
-> - [x] Migrar frontends de Vercel a GCP (GCS + LB unificado)
-> - [x] Migrar DB de Neon a Cloud SQL (ver `infrastructure/modules/cloudsql/`)
-> - [ ] Agregar un dominio y TLS (Cloudflare o GCP-managed SSL)
-> - [ ] Migrar secrets a GCP Secret Manager + External Secrets Operator
-> - [ ] Migrar archivos de Cloudinary a GCS (ver `infrastructure/modules/uploads/`)
+> **Proximos pasos recomendados** (cuando hagan falta):
+> - [ ] Agregar un dominio real y migrar de `sslip.io`
 > - [ ] Agregar entorno `staging`
 > - [ ] Implementar azul/verde (blue-green deployment)

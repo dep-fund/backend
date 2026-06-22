@@ -153,28 +153,67 @@ The project includes a GitHub Actions CI workflow (`.github/workflows/ci.yml`) t
 
 ---
 
+## Produccion (GKE + GCP)
+
+### Arquitectura
+
+```
+nginx Ingress (K8s, TLS via cert-manager + Let's Encrypt)
+  /          -> depfund-frontend (Deployment GKE, puerto 80)
+  /admin     -> depfund-backoffice (Deployment GKE, puerto 80)
+  /api       -> depfund-backend (Deployment GKE, puerto 8000)
+                  -> postgres (StatefulSet GKE, puerto 5432)
+```
+
+La infraestructura se despliega via OpenTofu en GCP (proyecto `depfund-498022-d7`).
+Los componentes se deployan como manifests de Kubernetes en el namespace `depfund`,
+gestionados por ArgoCD desde `kubernetes/`.
+
+### Sincronizacion Neon -> StatefulSet Postgres
+
+En testing se usa **Neon** como base de datos. Para sincronizar datos desde Neon al
+StatefulSet de Postgres en GKE:
+
+```bash
+# 1. Exportar dump desde Neon (consola o CLI)
+# 2. Copiar al pod
+kubectl cp ./neon_dump.sql depfund/postgres-0:/tmp/dump.sql
+
+# 3. Restaurar
+kubectl exec -n depfund postgres-0 -- psql -U postgres -d depfund -f /tmp/dump.sql
+```
+
+Ver `DEPLOY.md` para la guia completa de despliegue.
+
+---
+
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `POSTGRES_HOST` | `localhost` | Database host (`db` when using Docker) |
+| `POSTGRES_HOST` | `localhost` | Database host (`db` when using Docker, `postgres` en GKE) |
 | `POSTGRES_PORT` | `5433` | Port exposed on the host machine |
 | `POSTGRES_USER` | `postgres` | Database user |
 | `POSTGRES_PASSWORD` | `postgres` | Database password |
 | `POSTGRES_DB` | `depfund` | Database name |
-| `SECRET_KEY` | — | JWT Secret Key (set via secrets or .env) |
+| `SECRET_KEY` | -- | JWT Secret Key (set via secrets or .env) |
 | `ADMIN_SECRET_KEY` | `develop` | Admin creation secret key |
 | `SMTP_HOST` | `smtp.gmail.com` | SMTP host for emails |
 | `SMTP_PORT` | `587` | SMTP port (TLS) |
 | `SENDER_EMAIL` | `depfund.soporte@gmail.com` | Email address for outgoing mails |
-| `SENDER_PASSWORD` | — | Gmail App Password (16 characters) |
-| `FRONTEND_URL` | `http://localhost:5173` | URL del frontend público |
+| `SENDER_PASSWORD` | -- | Gmail App Password (16 characters) |
+| `FRONTEND_URL` | `http://localhost:5173` | URL del frontend publico |
 | `BACKOFFICE_URL` | `http://localhost:5174` | URL del panel administrativo |
 | `LOG_SQL_QUERIES` | `0` | Set to 1 to echo SQL queries to stdout |
 | `RPC_URL` | `http://127.0.0.1:8545` | RPC endpoint (Sepolia en prod, Anvil en dev) |
-| `DEPLOYER_PRIVATE_KEY` | — | Private key de la cuenta que firma transacciones |
-| `FACTORY_ADDRESS` | — | Dirección del contrato DpfFactory en Sepolia |
-| `MARKETPLACE_ADDRESS` | — | Dirección del contrato Marketplace en Sepolia |
-| `USDC_ADDRESS` | — | Dirección del contrato USDC en Sepolia |
-| `TREASURY_ADDRESS` | — | Dirección de la tesorería del protocolo |
-| `PLATFORM_ADDRESS` | — | Dirección de la cuenta plataforma |
+| `DEPLOYER_PRIVATE_KEY` | -- | Private key de la cuenta que firma transacciones |
+| `GOOGLE_CLIENT_ID` | -- | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | -- | Google OAuth client secret |
+| `FACTORY_ADDRESS` | -- | Direccion del contrato DpfFactory en Sepolia |
+| `MARKETPLACE_ADDRESS` | -- | Direccion del contrato Marketplace en Sepolia |
+| `USDC_ADDRESS` | -- | Direccion del contrato USDC en Sepolia |
+| `TREASURY_ADDRESS` | -- | Direccion de la tesoreria del protocolo |
+| `PLATFORM_ADDRESS` | -- | Direccion de la cuenta plataforma |
+| `CLOUDINARY_CLOUD_NAME` | -- | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | -- | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | -- | Cloudinary API secret |
