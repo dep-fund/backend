@@ -25,6 +25,7 @@ data:
   DOMAIN: "depfund.34.58.61.129.sslip.io"
 
   postgresql.conf: |
+    listen_addresses = '*'
     log_destination = 'stderr'
     log_line_prefix = '%t [%p]: user=%u,db=%d '
     log_statement = 'ddl'
