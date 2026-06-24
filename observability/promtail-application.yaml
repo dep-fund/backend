@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: depfund-promtail
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 6.16.6
+    chart: promtail
+    helm:
+      values: |
+        config:
+          clients:
+            - url: http://depfund-loki-gateway.observability:3100/loki/api/v1/push
+
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"
+
+        podAnnotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "3101"
+
+        extraArgs:
+          - -config.expand-env=true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
