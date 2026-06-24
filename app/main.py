@@ -1,7 +1,14 @@
-from fastapi import APIRouter, FastAPI
+import logging
+import time
+
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.core.exception_handlers import setup_exception_handlers
+from app.core.logging_config import setup_logging
+
+logger = logging.getLogger(__name__)
 from app.routes.auth.oauth import router as oauth_router
 from app.routes.health import router as health_router
 from app.routes.auth.auth import router as auth_router
@@ -38,6 +45,8 @@ from app.routes.project_image.admin_project_image import router as admin_project
 from app.routes.blockchain.marketplace import router as marketplace_router
 from app.routes.token import router as token_router
 
+setup_logging()
+
 app = FastAPI(
     title="DepFund API",
     version="0.1.0",
@@ -54,7 +63,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    elapsed = time.time() - start
+    logger.info(
+        "request",
+        extra={
+            "method": request.method,
+            "path": request.url.path,
+            "query": str(request.url.query),
+            "status": response.status_code,
+            "duration_ms": round(elapsed * 1000, 2),
+            "client_ip": request.client.host if request.client else None,
+            "user_agent": request.headers.get("user-agent"),
+        },
+    )
+    return response
+
+
 setup_exception_handlers(app)
+
+Instrumentator().instrument(app).expose(app, endpoint="/api/metrics")
 
 api_v1 = APIRouter(prefix="/api")
 

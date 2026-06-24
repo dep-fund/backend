@@ -1,0 +1,95 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: depfund-prometheus-stack
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: 68.4.4
+    chart: kube-prometheus-stack
+    helm:
+      values: |
+        namespaceOverride: "observability"
+        fullnameOverride: "prometheus-stack"
+
+        grafana:
+          enabled: true
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+              acme.cert-manager.io/http01-edit-in-place: "true"
+            hosts:
+              - grafana.depfund.34.58.61.129.sslip.io
+            tls:
+              - secretName: grafana-tls
+                hosts:
+                  - grafana.depfund.34.58.61.129.sslip.io
+          adminPassword: prom-operator
+          datasources:
+            datasources.yaml:
+              apiVersion: 1
+              datasources:
+                - name: Loki
+                  type: loki
+                  url: http://depfund-loki-gateway.observability:3100
+                  access: proxy
+
+        prometheus:
+          prometheusSpec:
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelector: {}
+            podMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelector: {}
+            additionalServiceMonitors:
+              - name: postgres-exporter
+                namespaceSelector:
+                  matchNames:
+                    - depfund
+                selector:
+                  matchLabels:
+                    app: postgres-exporter
+                endpoints:
+                  - port: metrics
+                    interval: 15s
+                    path: /metrics
+            resources:
+              requests:
+                cpu: "200m"
+                memory: "512Mi"
+              limits:
+                cpu: "500m"
+                memory: "1Gi"
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 10Gi
+                  storageClassName: standard-rwo
+
+        alertmanager:
+          enabled: false
+
+        kube-state-metrics:
+          enabled: true
+
+        nodeExporter:
+          enabled: true
+
+        windowsMonitoring:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - SkipCrds=true

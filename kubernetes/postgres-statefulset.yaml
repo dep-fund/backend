@@ -14,6 +14,25 @@ spec:
   selector:
     app: postgres
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-exporter
+  namespace: depfund
+  labels:
+    app: postgres-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9187"
+spec:
+  ports:
+    - port: 9187
+      targetPort: 9187
+      protocol: TCP
+      name: metrics
+  selector:
+    app: postgres
+---
 
 apiVersion: apps/v1
 kind: StatefulSet
@@ -30,6 +49,9 @@ spec:
     metadata:
       labels:
         app: postgres
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
     spec:
       terminationGracePeriodSeconds: 30
       containers:
@@ -54,10 +76,34 @@ spec:
                 secretKeyRef:
                   name: depfund-secrets
                   key: POSTGRES_DB
+          args:
+            - "-c"
+            - "config_file=/etc/postgresql/postgresql.conf"
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
               subPath: pgdata
+            - name: postgres-config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+              readOnly: true
+            - name: postgres-config
+              mountPath: /docker-entrypoint-initdb.d/init-pg-extensions.sql
+              subPath: init-pg-extensions.sql
+              readOnly: true
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    sleep 5
+                    for i in $(seq 1 12); do
+                      pg_isready -q && break
+                      sleep 5
+                    done
+                    psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;" 2>/dev/null || true
           resources:
             requests:
               cpu: "100m"
@@ -77,6 +123,33 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 15
+        - name: postgres-exporter
+          image: prometheuscommunity/postgres-exporter:latest
+          ports:
+            - containerPort: 9187
+              name: metrics
+          env:
+            - name: DATA_SOURCE_NAME
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)?sslmode=disable&application_name=postgres_exporter"
+          envFrom:
+            - secretRef:
+                name: depfund-secrets
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+      volumes:
+        - name: postgres-config
+          configMap:
+            name: depfund-config
+            items:
+              - key: postgresql.conf
+                path: postgresql.conf
+              - key: init-pg-extensions.sql
+                path: init-pg-extensions.sql
   volumeClaimTemplates:
     - metadata:
         name: data

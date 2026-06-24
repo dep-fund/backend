@@ -45,11 +45,32 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - depfund-pgdata:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+    command:
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d $(cat /run/secrets/postgres_db)"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
+    restart: unless-stopped
+    secrets:
+      - postgres_user
+      - postgres_password
+      - postgres_db
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@db:5432/depfund?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      db:
+        condition: service_healthy
 
     
   db-test:

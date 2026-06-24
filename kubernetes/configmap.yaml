@@ -23,3 +23,18 @@ data:
   GOOGLE_USERINFO_URL: "https://www.googleapis.com/oauth2/v3/userinfo"
   BACKUP_NOTIFY_EMAIL: "depfund.soporte@gmail.com"
   DOMAIN: "depfund.34.58.61.129.sslip.io"
+
+  postgresql.conf: |
+    log_destination = 'stderr'
+    log_line_prefix = '%t [%p]: user=%u,db=%d '
+    log_statement = 'ddl'
+    log_min_duration_statement = 200
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    shared_preload_libraries = 'pg_stat_statements'
+    pg_stat_statements.track = 'all'
+    pg_stat_statements.max = 10000
+
+  init-pg-extensions.sql: |
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
