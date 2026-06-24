@@ -1,0 +1,240 @@
+{
+  "title": "DepFund Backend",
+  "uid": "depfund-backend",
+  "tags": ["depfund", "backend"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "editable": true,
+  "panels": [
+    {
+      "title": "Requests per second",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\"}[5m]))",
+          "legendFormat": "RPS"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {"mode": "fixed", "fixedColor": "blue"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        }
+      }
+    },
+    {
+      "title": "Error rate (5xx)",
+      "type": "stat",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\"}[5m])) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "orange", "value": 1},
+            {"color": "red", "value": 5}
+          ]}
+        }
+      }
+    },
+    {
+      "title": "Latency P99",
+      "type": "stat",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"depfund-backend|.*backend.*\"}[5m])) by (le))",
+          "legendFormat": "P99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "orange", "value": 0.5},
+            {"color": "red", "value": 1}
+          ]}
+        }
+      }
+    },
+    {
+      "title": "Latency P95",
+      "type": "stat",
+      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"depfund-backend|.*backend.*\"}[5m])) by (le))",
+          "legendFormat": "P95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "orange", "value": 0.3},
+            {"color": "red", "value": 0.8}
+          ]}
+        }
+      }
+    },
+    {
+      "title": "Active requests",
+      "type": "stat",
+      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {
+          "expr": "sum(http_requests_total{job=~\"depfund-backend|.*backend.*\"}) - sum(http_requests_total{job=~\"depfund-backend|.*backend.*\"} offset 1m)",
+          "legendFormat": "Active"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "fixed", "fixedColor": "blue"}
+        }
+      }
+    },
+    {
+      "title": "RPS by endpoint",
+      "type": "bargauge",
+      "gridPos": {"x": 0, "y": 4, "w": 8, "h": 8},
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\"}[5m])) by (path))",
+          "legendFormat": "{{path}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "title": "Latency P50/P95/P99 over time",
+      "type": "timeseries",
+      "gridPos": {"x": 8, "y": 4, "w": 16, "h": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"depfund-backend|.*backend.*\"}[5m])) by (le))",
+          "legendFormat": "P99"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"depfund-backend|.*backend.*\"}[5m])) by (le))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=~\"depfund-backend|.*backend.*\"}[5m])) by (le))",
+          "legendFormat": "P50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "title": "Error logs (Loki)",
+      "type": "logs",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "{job=~\"depfund-backend|.*backend.*\"} |= \"error\" |= \"\"",
+          "legendFormat": "",
+          "datasource": "Loki"
+        }
+      ],
+      "datasource": "Loki"
+    },
+    {
+      "title": "Error rate by endpoint",
+      "type": "table",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\",status=~\"5..\"}[5m])) by (path, method) / sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\"}[5m])) by (path, method) * 100",
+          "legendFormat": "{{path}} ({{method}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "orange", "value": 1},
+            {"color": "red", "value": 5}
+          ]},
+          "custom": {
+            "displayMode": "color-background"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Value #A"},
+            "properties": [{"id": "displayName", "value": "Error %"}]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Requests by status code",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\",status=~\"2..\"}[5m])) by (status)",
+          "legendFormat": "2xx {{status}}"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\",status=~\"3..\"}[5m])) by (status)",
+          "legendFormat": "3xx {{status}}"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\",status=~\"4..\"}[5m])) by (status)",
+          "legendFormat": "4xx {{status}}"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"depfund-backend|.*backend.*\",status=~\"5..\"}[5m])) by (status)",
+          "legendFormat": "5xx {{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "title": "Recent 10 error logs",
+      "type": "logs",
+      "gridPos": {"x": 12, "y": 20, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "{job=~\"depfund-backend|.*backend.*\"} |= \"error\"",
+          "legendFormat": "",
+          "datasource": "Loki",
+          "maxLines": 10
+        }
+      ],
+      "datasource": "Loki"
+    }
+  ]
+}

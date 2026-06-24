@@ -37,6 +37,20 @@ spec:
                   type: loki
                   url: http://depfund-loki-gateway.observability:3100
                   access: proxy
+          dashboardProviders:
+            dashboardproviders.yaml:
+              apiVersion: 1
+              providers:
+                - name: depfund
+                  orgId: 1
+                  folder: DepFund
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards/depfund
+          dashboardsConfigMaps:
+            depfund: depfund-backend-dashboard
 
         prometheus:
           prometheusSpec:
