@@ -22,7 +22,7 @@ data:
           "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
           "targets": [
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\"}[5m]))",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\"}[5m]))",
               "legendFormat": "RPS"
             }
           ],
@@ -40,7 +40,7 @@ data:
           "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
           "targets": [
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=~\".*depfund.*backend.*\"}[5m])) * 100",
+              "expr": "(sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) * 100) or 0",
               "legendFormat": "Error %"
             }
           ],
@@ -62,7 +62,7 @@ data:
           "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\".*depfund.*backend.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"depfund-backend\"}[5m])) by (le))",
               "legendFormat": "P99"
             }
           ],
@@ -84,7 +84,7 @@ data:
           "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
           "targets": [
             {
-              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\".*depfund.*backend.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"depfund-backend\"}[5m])) by (le))",
               "legendFormat": "P95"
             }
           ],
@@ -106,7 +106,7 @@ data:
           "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
           "targets": [
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\"}[5m]))",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\"}[5m]))",
               "legendFormat": "Total RPS"
             }
           ],
@@ -123,7 +123,7 @@ data:
           "gridPos": {"x": 0, "y": 4, "w": 8, "h": 8},
           "targets": [
             {
-              "expr": "topk(10, sum(rate(http_requests_total{job=~\".*depfund.*backend.*\"}[5m])) by (path))",
+              "expr": "topk(10, sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) by (path))",
               "legendFormat": "{{path}}"
             }
           ],
@@ -140,15 +140,15 @@ data:
           "gridPos": {"x": 8, "y": 4, "w": 16, "h": 8},
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\".*depfund.*backend.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"depfund-backend\"}[5m])) by (le))",
               "legendFormat": "P99"
             },
             {
-              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\".*depfund.*backend.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"depfund-backend\"}[5m])) by (le))",
               "legendFormat": "P95"
             },
             {
-              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=~\".*depfund.*backend.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"depfund-backend\"}[5m])) by (le))",
               "legendFormat": "P50"
             }
           ],
@@ -165,19 +165,19 @@ data:
           "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\",status=~\"2..\"}[5m])) by (status)",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"2..\"}[5m])) by (status)",
               "legendFormat": "2xx"
             },
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\",status=~\"3..\"}[5m])) by (status)",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"3..\"}[5m])) by (status)",
               "legendFormat": "3xx"
             },
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\",status=~\"4..\"}[5m])) by (status)",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"4..\"}[5m])) by (status)",
               "legendFormat": "4xx"
             },
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\",status=~\"5..\"}[5m])) by (status)",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) by (status)",
               "legendFormat": "5xx"
             }
           ],
@@ -194,7 +194,7 @@ data:
           "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "sum(rate(http_requests_total{job=~\".*depfund.*backend.*\",status=~\"5..\"}[5m])) by (path) / sum(rate(http_requests_total{job=~\".*depfund.*backend.*\"}[5m])) by (path) * 100",
+              "expr": "(sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) by (path) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) by (path) * 100) or 0",
               "legendFormat": "{{path}}"
             }
           ],
@@ -220,7 +220,7 @@ data:
           "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
           "targets": [
             {
-              "expr": "{app=~\".*depfund.*backend.*\"} |= \"error\"",
+              "expr": "{app=\"depfund-backend\"} |= \"error\"",
               "legendFormat": "",
               "datasource": "Loki"
             }
@@ -240,9 +240,29 @@ data:
       "editable": true,
       "panels": [
         {
+          "title": "Uptime",
+          "type": "stat",
+          "gridPos": {"x": 0, "y": 0, "w": 4, "h": 5},
+          "targets": [
+            {
+              "expr": "pg_up{job=\"postgres-exporter\"}",
+              "legendFormat": "Up"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [
+                {"color": "red", "value": null},
+                {"color": "green", "value": 1}
+              ]}
+            }
+          }
+        },
+        {
           "title": "Active connections",
           "type": "stat",
-          "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+          "gridPos": {"x": 4, "y": 0, "w": 4, "h": 5},
           "targets": [
             {
               "expr": "sum(pg_stat_activity_count{job=\"postgres-exporter\"})",
@@ -263,10 +283,10 @@ data:
         {
           "title": "Cache hit ratio",
           "type": "stat",
-          "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+          "gridPos": {"x": 8, "y": 0, "w": 4, "h": 5},
           "targets": [
             {
-              "expr": "sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\"}[5m])) + sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\"}[5m]))) * 100",
+              "expr": "sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])) + sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))) * 100",
               "legendFormat": "Hit ratio"
             }
           ],
@@ -283,12 +303,12 @@ data:
           }
         },
         {
-          "title": "Transactions per second",
+          "title": "TPS",
           "type": "stat",
-          "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+          "gridPos": {"x": 12, "y": 0, "w": 4, "h": 5},
           "targets": [
             {
-              "expr": "sum(rate(pg_stat_database_xact_commit{job=\"postgres-exporter\"}[5m])) + sum(rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\"}[5m]))",
+              "expr": "sum(rate(pg_stat_database_xact_commit{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "TPS"
             }
           ],
@@ -302,11 +322,11 @@ data:
         {
           "title": "Deadlocks",
           "type": "stat",
-          "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+          "gridPos": {"x": 16, "y": 0, "w": 4, "h": 5},
           "targets": [
             {
               "expr": "sum(rate(pg_stat_database_deadlocks{job=\"postgres-exporter\"}[5m]))",
-              "legendFormat": "Deadlocks/s"
+              "legendFormat": "Deadlocks"
             }
           ],
           "fieldConfig": {
@@ -314,7 +334,7 @@ data:
               "color": {"mode": "thresholds"},
               "thresholds": {"mode": "absolute", "steps": [
                 {"color": "green", "value": null},
-                {"color": "red", "value": 0.1}
+                {"color": "red", "value": 0.001}
               ]}
             }
           }
@@ -322,10 +342,10 @@ data:
         {
           "title": "Database size",
           "type": "stat",
-          "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+          "gridPos": {"x": 20, "y": 0, "w": 4, "h": 5},
           "targets": [
             {
-              "expr": "max(pg_database_size_bytes{job=\"postgres-exporter\"})",
+              "expr": "max(pg_database_size_bytes{job=\"postgres-exporter\",datname=\"neondb\"})",
               "legendFormat": "Size"
             }
           ],
@@ -337,12 +357,12 @@ data:
           }
         },
         {
-          "title": "Active queries by state",
+          "title": "Connections by state",
           "type": "timeseries",
-          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+          "gridPos": {"x": 0, "y": 5, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "sum(pg_stat_activity_count{job=\"postgres-exporter\",state=~\"active|idle|idle in transaction|fastpath function call\"}) by (state)",
+              "expr": "sum(pg_stat_activity_count{job=\"postgres-exporter\"}) by (state)",
               "legendFormat": "{{state}}"
             }
           ],
@@ -353,12 +373,61 @@ data:
           }
         },
         {
-          "title": "Cache hit ratio evolution",
+          "title": "Transactions per second",
           "type": "timeseries",
-          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+          "gridPos": {"x": 12, "y": 5, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "(sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\"}[5m])) + sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\"}[5m])))) * 100",
+              "expr": "rate(pg_stat_database_xact_commit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Commits"
+            },
+            {
+              "expr": "rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Rollbacks"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cps",
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "Rows operations",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 13, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "rate(pg_stat_database_tup_fetched{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Fetched"
+            },
+            {
+              "expr": "rate(pg_stat_database_tup_inserted{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Inserted"
+            },
+            {
+              "expr": "rate(pg_stat_database_tup_updated{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Updated"
+            },
+            {
+              "expr": "rate(pg_stat_database_tup_deleted{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Deleted"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "Cache hit ratio over time",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 13, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "(sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])) + sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\",datname=\"neondb\"}[5m])))) * 100",
               "legendFormat": "Cache hit %"
             }
           ],
@@ -375,69 +444,84 @@ data:
           }
         },
         {
-          "title": "Commit vs Rollback",
-          "type": "timeseries",
-          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+          "title": "Top 10 tables by size",
+          "type": "bargauge",
+          "gridPos": {"x": 0, "y": 21, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "sum(rate(pg_stat_database_xact_commit{job=\"postgres-exporter\"}[5m])) by (datname)",
-              "legendFormat": "commits ({{datname}})"
-            },
-            {
-              "expr": "sum(rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\"}[5m])) by (datname)",
-              "legendFormat": "rollbacks ({{datname}})"
+              "expr": "topk(10, pg_stat_user_tables_table_size_bytes{job=\"postgres-exporter\"})",
+              "legendFormat": "{{relname}}"
             }
           ],
           "fieldConfig": {
             "defaults": {
-              "unit": "cps",
+              "unit": "bytes",
               "color": {"mode": "palette-classic"}
             }
           }
         },
         {
-          "title": "Read/Write throughput",
-          "type": "timeseries",
-          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+          "title": "Top 10 tables by dead tuples",
+          "type": "bargauge",
+          "gridPos": {"x": 12, "y": 21, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "sum(rate(pg_stat_database_tup_fetched{job=\"postgres-exporter\"}[5m])) by (datname)",
-              "legendFormat": "fetched ({{datname}})"
-            },
-            {
-              "expr": "sum(rate(pg_stat_database_tup_returned{job=\"postgres-exporter\"}[5m])) by (datname)",
-              "legendFormat": "returned ({{datname}})"
-            },
-            {
-              "expr": "sum(rate(pg_stat_database_tup_inserted{job=\"postgres-exporter\"}[5m])) by (datname)",
-              "legendFormat": "inserted ({{datname}})"
-            },
-            {
-              "expr": "sum(rate(pg_stat_database_tup_updated{job=\"postgres-exporter\"}[5m])) by (datname)",
-              "legendFormat": "updated ({{datname}})"
-            },
-            {
-              "expr": "sum(rate(pg_stat_database_tup_deleted{job=\"postgres-exporter\"}[5m])) by (datname)",
-              "legendFormat": "deleted ({{datname}})"
+              "expr": "topk(10, pg_stat_user_tables_n_dead_tup{job=\"postgres-exporter\"})",
+              "legendFormat": "{{relname}}"
             }
           ],
           "fieldConfig": {
             "defaults": {
-              "unit": "cps",
               "color": {"mode": "palette-classic"}
             }
           }
         },
         {
-          "title": "Slow queries (Loki)",
+          "title": "Blocks hit vs read",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 29, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "rate(pg_stat_database_blks_hit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Blocks hit"
+            },
+            {
+              "expr": "rate(pg_stat_database_blks_read{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "legendFormat": "Blocks read"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "WAL size",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 29, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "pg_wal_size_bytes{job=\"postgres-exporter\"}",
+              "legendFormat": "WAL size"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "Slow queries from Loki",
           "type": "logs",
-          "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
+          "gridPos": {"x": 0, "y": 37, "w": 24, "h": 8},
           "targets": [
             {
               "expr": "{namespace=\"depfund\",container=\"postgres\"} |= \"duration\"",
               "legendFormat": "",
-              "datasource": "Loki",
-              "maxLines": 20
+              "datasource": "Loki"
             }
           ],
           "datasource": "Loki"

@@ -35,7 +35,7 @@ spec:
               datasources:
                 - name: Loki
                   type: loki
-                  url: http://depfund-loki-gateway.observability:3100
+                  url: http://depfund-loki-gateway.observability:80
                   access: proxy
           dashboardProviders:
             dashboardproviders.yaml:
