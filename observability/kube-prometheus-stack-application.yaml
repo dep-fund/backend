@@ -30,14 +30,10 @@ spec:
             datasources.yaml:
               apiVersion: 1
               datasources:
-                - name: Prometheus
-                  type: prometheus
-                  url: http://prometheus-stack-kube-prom-prometheus.observability:9090
-                  isDefault: true
                 - name: Loki
                   type: loki
                   url: http://depfund-loki-gateway.observability:3100
-                  isDefault: false
+                  access: proxy
 
         prometheus:
           prometheusSpec:
