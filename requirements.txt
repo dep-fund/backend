@@ -19,3 +19,4 @@ ruff
 pytest
 pytest-asyncio
 web3
+prometheus-fastapi-instrumentator
