@@ -9,10 +9,11 @@ from app.exceptions.marketplace import (
     InsufficientAvailableTokens,
     PublicationNotActive,
     PublicationNotFound,
+    TradeNotFound,
 )
 from app.models.publication import Publication
 from app.models.trade import Trade
-from app.schemas.trade import TradeCreate, TradeResponse, TradeUpdateStatus
+from app.schemas.trade import TradeCreate, TradeResponse
 
 
 class TradeService:
@@ -52,9 +53,7 @@ class TradeService:
         return TradeResponse.model_validate(trade)
 
     async def confirm_trade(self, trade_id: UUID, tx_hash: str) -> TradeResponse:
-        trade = await self.session.scalar(
-            select(Trade).where(Trade.id == trade_id)
-        )
+        trade = await self.session.scalar(select(Trade).where(Trade.id == trade_id))
         if not trade:
             raise TradeNotFound()
 
@@ -65,9 +64,7 @@ class TradeService:
         return TradeResponse.model_validate(trade)
 
     async def fail_trade(self, trade_id: UUID) -> TradeResponse:
-        trade = await self.session.scalar(
-            select(Trade).where(Trade.id == trade_id)
-        )
+        trade = await self.session.scalar(select(Trade).where(Trade.id == trade_id))
         if not trade:
             raise TradeNotFound()
 
