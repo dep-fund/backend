@@ -4,7 +4,7 @@ from fastapi import status
 
 class ProjectNotFound(ExceptionHandler):
     code = status.HTTP_404_NOT_FOUND
-    message = "Permission not found."
+    message = "Project not found."
     blocker = True
 
 

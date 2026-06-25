@@ -8,7 +8,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.core.exception_handlers import setup_exception_handlers
 from app.core.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+
 from app.routes.auth.oauth import router as oauth_router
 from app.routes.health import router as health_router
 from app.routes.auth.auth import router as auth_router
@@ -44,7 +44,9 @@ from app.routes.wallet import router as wallet_router
 from app.routes.project_image.admin_project_image import router as admin_project_images
 from app.routes.blockchain.marketplace import router as marketplace_router
 from app.routes.token import router as token_router
+from app.routes.blockchain.admin_dividends import router as admin_dividends
 
+logger = logging.getLogger(__name__)
 setup_logging()
 
 app = FastAPI(
@@ -115,6 +117,7 @@ api_v1.include_router(admin_project_document)
 api_v1.include_router(admin_project_images)
 
 api_v1.include_router(health_router)
+api_v1.include_router(admin_dividends)
 app.include_router(auth_router)
 app.include_router(oauth_router)
 app.include_router(users_router)
@@ -137,5 +140,6 @@ app.include_router(admin_category_router)
 app.include_router(admin_project_advance)
 app.include_router(admin_project_document)
 app.include_router(admin_project_images)
+app.include_router(admin_dividends)
 
 app.include_router(api_v1)

@@ -28,7 +28,7 @@ DEST_DIR = Path(__file__).parent / "app" / "services" / "blockchain" / "abis"
 FULL_ARTIFACT_CONTRACTS = ["Offering", "Dividends"]
 
 # Contracts that only need the ABI — already deployed, fixed addresses
-ABI_ONLY_CONTRACTS = ["DpfFactory", "DpfToken", "Marketplace"]
+ABI_ONLY_CONTRACTS = ["DpfFactory", "DpfToken", "Marketplace", "MockUSDC"]
 
 ALL_CONTRACTS = FULL_ARTIFACT_CONTRACTS + ABI_ONLY_CONTRACTS
 

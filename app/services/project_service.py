@@ -266,6 +266,8 @@ class ProjectService:
             dpf_token_service.transfer_to_offering(
                 token_address, offering_address, settings.PROJECT_TOKEN_SUPPLY
             )
+            dpf_token_service.set_dividends(token_address, dividend_address)
+            dpf_token_service.wait_for_dividends_set(token_address, dividend_address)
 
             token_service = TokenContractService(self.session)
             token = await token_service.create_token(

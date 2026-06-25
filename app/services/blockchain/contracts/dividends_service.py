@@ -10,6 +10,17 @@ class DividendsService(BaseContractService):
 
     contract_name = "Dividends"
 
+    def approve_usdc(self, dividend_address: str):
+        usdc = self.client.get_contract(
+            "MockUSDC", DeploymentReaderProduction.get_addresses()["usdc_address"]
+        )
+
+        tx = usdc.functions.approve(dividend_address, 2**256 - 1).build_transaction(
+            {"from": self.client.deployer.address}
+        )
+
+        self.client.send_transaction(tx)
+
     def deploy(self, dpf_token: str, issuer: str, offering: str) -> str:
         """
         Deploy a new Dividends contract and return its address.
@@ -26,6 +37,7 @@ class DividendsService(BaseContractService):
         )
 
         self._contract = self.client.get_contract(self.contract_name, address)
+        self.approve_usdc(address)
         return address
 
     def distribute(self, usdc_amount: int) -> dict:
