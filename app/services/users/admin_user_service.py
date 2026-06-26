@@ -24,9 +24,7 @@ from app.exceptions.users.user_exceptions import (
     UserNotFound,
     WrongCurrentPassword,
 )
-from app.schemas.users.standard_user import (
-    StandardUserResponse
-)
+from app.schemas.users.standard_user import StandardUserResponse
 
 
 class AdminUserService:
@@ -63,6 +61,7 @@ class AdminUserService:
             image=data.image,
             type=UserType.ADMIN,
             role_id=role.id,
+            birthdate=data.birthdate,
         )
 
         self.session.add(user)
@@ -73,11 +72,13 @@ class AdminUserService:
 
         return AdminUserResponse.model_validate(user)
 
-    async def update(self, user_id: UUID, data: AdminUserUpdateRequest) -> AdminUserResponse:
+    async def update(
+        self, user_id: UUID, data: AdminUserUpdateRequest
+    ) -> AdminUserResponse:
         user = await self._user_service.get_by_id(user_id)
         if not user:
             raise UserNotFound()
-        
+
         for field, value in data.model_dump(exclude_none=True).items():
             setattr(user, field, value)
 
@@ -109,7 +110,7 @@ class AdminUserService:
         await self.session.commit()
 
         return {"detail": "User deleted successfully"}
-    
+
     async def toggle_user_block(self, user_id: UUID) -> StandardUserResponse:
         user = await self._user_service.get_by_id(user_id)
         if not user:
@@ -120,4 +121,3 @@ class AdminUserService:
         await self.session.refresh(user)
 
         return StandardUserResponse.model_validate(user)
-    

@@ -1,6 +1,6 @@
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
@@ -10,6 +10,7 @@ class AdminUserCreateRequest(BaseModel):
     username: str
     name: str
     last_name: str
+    birthdate: date
     email: EmailStr
     password: str
     image: Optional[str] = None

@@ -267,6 +267,7 @@ async def test_create_admin_user_success(client: AsyncClient):
             "last_name": "User",
             "email": "newadmin@depfund.com",
             "password": "AdminPass123!",
+            "birthdate": "2015-01-01",
         },
     )
 
@@ -287,6 +288,7 @@ async def test_create_admin_user_wrong_secret(client: AsyncClient):
             "last_name": "Er",
             "email": "hacker@depfund.com",
             "password": "AdminPass123!",
+            "birthdate": "2015-01-01",
         },
     )
 

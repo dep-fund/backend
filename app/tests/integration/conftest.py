@@ -114,6 +114,7 @@ async def admin_auth_headers(client: AsyncClient) -> dict:
             "last_name": "Test",
             "email": "admin@depfund.com",
             "password": "AdminPassword123!",
+            "birthdate": "2000-01-01",
         },
     )
     assert register_response.status_code == 201, (

@@ -21,9 +21,8 @@ if TYPE_CHECKING:
     from app.models.project import Project
     from app.models.project_evaluation import ProjectEvaluation
     from app.models.wallet import Wallet
-    from app.models.publication import Publication  
-    from app.models.trade import Trade              
-
+    from app.models.publication import Publication
+    from app.models.trade import Trade
 
 
 class User(Base):
@@ -35,7 +34,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100), unique=True)
     name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
-    birthdate: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    birthdate: Mapped[date] = mapped_column(Date, nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True)
     password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     image: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -71,7 +70,7 @@ class User(Base):
     role: Mapped["Role"] = relationship("Role", back_populates="users")
     projects: Mapped[list["Project"]] = relationship("Project", back_populates="user")
     publications: Mapped[list["Publication"]] = relationship(
-    "Publication", back_populates="seller", foreign_keys="Publication.seller_id"
+        "Publication", back_populates="seller", foreign_keys="Publication.seller_id"
     )
     trades: Mapped[list["Trade"]] = relationship(
         "Trade", back_populates="buyer", foreign_keys="Trade.buyer_id"

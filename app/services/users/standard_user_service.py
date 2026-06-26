@@ -77,8 +77,7 @@ class StandardUserService:
             raise UsernameAlreadyTaken()
         if await self._user_service.get_by_email(data.email):
             raise EmailAlreadyRegistered()
-        if data.birthdate is None:
-            raise MinorAge()
+
         today = date.today()
         age = (
             today.year

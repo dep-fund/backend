@@ -9,7 +9,7 @@ class StandardUserRegisterRequest(BaseModel):
     username: str
     name: str
     last_name: str
-    birthdate: Optional[date] = None
+    birthdate: date
     email: EmailStr
     password: str
 
