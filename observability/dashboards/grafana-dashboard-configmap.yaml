@@ -215,12 +215,12 @@ data:
           ]
         },
         {
-          "title": "Error logs (Loki)",
+          "title": "Backend logs (Loki)",
           "type": "logs",
           "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
           "targets": [
             {
-              "expr": "{app=\"depfund-backend\"} |= \"error\"",
+              "expr": "{app=\"depfund-backend\"}",
               "legendFormat": "",
               "datasource": "Loki"
             }
@@ -514,12 +514,12 @@ data:
           }
         },
         {
-          "title": "Slow queries from Loki",
+          "title": "PostgreSQL logs (Loki)",
           "type": "logs",
           "gridPos": {"x": 0, "y": 37, "w": 24, "h": 8},
           "targets": [
             {
-              "expr": "{namespace=\"depfund\",container=\"postgres\"} |= \"duration\"",
+              "expr": "{namespace=\"depfund\",container=\"postgres\"}",
               "legendFormat": "",
               "datasource": "Loki"
             }
