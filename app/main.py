@@ -45,6 +45,7 @@ from app.routes.project_image.admin_project_image import router as admin_project
 from app.routes.blockchain.marketplace import router as marketplace_router
 from app.routes.token import router as token_router
 from app.routes.blockchain.admin_dividends import router as admin_dividends
+from app.routes.admin_reports import router as admin_reports_router
 from app.routes.publication import router as publications_router
 from app.routes.trades import router as trades_router
 
@@ -122,6 +123,8 @@ api_v1.include_router(admin_project_images)
 
 api_v1.include_router(health_router)
 api_v1.include_router(admin_dividends)
+api_v1.include_router(admin_reports_router)
+
 app.include_router(auth_router)
 app.include_router(oauth_router)
 app.include_router(users_router)
@@ -147,5 +150,6 @@ app.include_router(admin_project_advance)
 app.include_router(admin_project_document)
 app.include_router(admin_project_images)
 app.include_router(admin_dividends)
+app.include_router(admin_reports_router)
 
 app.include_router(api_v1)
