@@ -3,7 +3,7 @@ from uuid import uuid4
 from unittest.mock import MagicMock
 from app.services.category_service import CategoryService
 from app.models.category import Category
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from app.schemas.category import (
     CategoryCreateRequest,
@@ -15,13 +15,13 @@ from datetime import datetime, timezone
 
 # --- Create Tests ---
 
+
 @pytest.mark.asyncio
 async def test_category_create(mock_session):
     service = CategoryService(mock_session)
 
     data = CategoryCreateRequest(
-        name="Football",
-        description="Football related category"
+        name="Football", description="Football related category"
     )
 
     response = await service.create(data)
@@ -36,24 +36,20 @@ async def test_category_create(mock_session):
 
 # --- Update Tests ---
 
+
 @pytest.mark.asyncio
 async def test_category_update_success(mock_session):
     category_id = uuid4()
 
     category = Category(
-        id=category_id,
-        name="Football",
-        description="Old football Test"
+        id=category_id, name="Football", description="Old football Test"
     )
 
     mock_session.scalar.return_value = category
 
     service = CategoryService(mock_session)
 
-    data = CategoryUpdateRequest(
-        name="Basketball",
-        description="Basketball category"
-    )
+    data = CategoryUpdateRequest(name="Basketball", description="Basketball category")
 
     response = await service.update(category_id, data)
 
@@ -73,15 +69,14 @@ async def test_category_update_not_found(mock_session):
 
     service = CategoryService(mock_session)
 
-    data = CategoryUpdateRequest(
-        name="Tennis"
-    )
+    data = CategoryUpdateRequest(name="Tennis")
 
     with pytest.raises(CategoryNotFound):
         await service.update(uuid4(), data)
 
 
 # --- Get By ID Tests ---
+
 
 @pytest.mark.asyncio
 async def test_category_get_by_id_success(mock_session):
@@ -91,8 +86,8 @@ async def test_category_get_by_id_success(mock_session):
         id=category_id,
         name="Volleyball",
         description="Volleyball category",
-        created_at=datetime.now(timezone.utc),  
-        updated_at=datetime.now(timezone.utc) 
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
 
     mock_session.scalar = AsyncMock(return_value=category)
@@ -103,6 +98,7 @@ async def test_category_get_by_id_success(mock_session):
 
     assert response.name == "Volleyball"
     assert response.description == "Volleyball category"
+
 
 @pytest.mark.asyncio
 async def test_category_get_by_id_not_found(mock_session):
@@ -116,19 +112,12 @@ async def test_category_get_by_id_not_found(mock_session):
 
 # --- Get Categories By IDs Tests ---
 
+
 @pytest.mark.asyncio
 async def test_get_categories_by_ids(mock_session):
     categories = [
-        Category(
-            id=uuid4(),
-            name="Football",
-            description="Football category"
-        ),
-        Category(
-            id=uuid4(),
-            name="Basketball",
-            description="Basketball category"
-        )
+        Category(id=uuid4(), name="Football", description="Football category"),
+        Category(id=uuid4(), name="Basketball", description="Basketball category"),
     ]
 
     mock_scalars = MagicMock()
@@ -138,9 +127,7 @@ async def test_get_categories_by_ids(mock_session):
 
     service = CategoryService(mock_session)
 
-    response = await service.get_categories_by_ids(
-        [uuid4(), uuid4()]
-    )
+    response = await service.get_categories_by_ids([uuid4(), uuid4()])
 
     assert len(response) == 2
     assert response[0].name == "Football"
@@ -148,6 +135,7 @@ async def test_get_categories_by_ids(mock_session):
 
 
 # --- List Tests ---
+
 
 @pytest.mark.asyncio
 @pytest.mark.asyncio
@@ -160,15 +148,15 @@ async def test_category_list(mock_session):
             name="Football",
             description="Football category",
             created_at=now,
-            updated_at=now
+            updated_at=now,
         ),
         Category(
             id=uuid4(),
             name="Basketball",
             description="Basketball category",
             created_at=now,
-            updated_at=now
-        )
+            updated_at=now,
+        ),
     ]
 
     mock_scalars = MagicMock()
@@ -187,14 +175,6 @@ async def test_category_list(mock_session):
     assert response[1].name == "Basketball"
 
 
-
-
-
-
-
-
-
-
 @pytest.mark.asyncio
 async def test_category_list_with_search(mock_session):
     now = datetime.now(timezone.utc)
@@ -205,7 +185,7 @@ async def test_category_list_with_search(mock_session):
             name="Football",
             description="Football category",
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
     ]
 
@@ -222,6 +202,7 @@ async def test_category_list_with_search(mock_session):
     assert total == 1
     assert len(response) == 1
     assert response[0].name == "Football"
+
 
 @pytest.mark.asyncio
 async def test_category_list_empty(mock_session):

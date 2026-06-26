@@ -10,7 +10,6 @@ from app.models.user import User
 from app.services.jwt_token_service import TokenService
 from app.services.users.standard_user_service import UserService
 from app.exceptions.auth.auth import PermissionDenied
-from app.services.jwt_token_service import TokenService
 
 from app.exceptions.users.user_exceptions import (
     UserNotFound,
@@ -19,6 +18,7 @@ from app.exceptions.users.user_exceptions import (
 from app.exceptions.auth.auth import (
     UserBlocked,
 )
+
 bearer = HTTPBearer(auto_error=False)
 
 
@@ -29,18 +29,25 @@ def _extract_token(credentials: Union[HTTPAuthorizationCredentials, str, None]) 
     elif isinstance(credentials, str):
         scheme, _, token = credentials.partition(" ")
     else:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization header")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header",
+        )
     if scheme.lower() != "bearer" or not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization header")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header",
+        )
     return token
 
 
 def _get_subject(token: str) -> str:
     payload = TokenService().decode_token(token)
     if not payload or "sub" not in payload or payload.get("token_kind") != "user":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        )
     return payload["sub"]
-
 
 
 async def get_current_user(
@@ -58,11 +65,6 @@ async def get_current_user(
     return user
 
 
-
-
-
-
-
 def require_user_type(*allowed_types: UserType):
     """
     Factory that returns a FastAPI dependency enforcing one or more UserType values.
@@ -71,6 +73,7 @@ def require_user_type(*allowed_types: UserType):
         dependencies=[Depends(require_user_type(UserType.ADMIN))]
         dependencies=[Depends(require_user_type(UserType.ADMIN, UserType.STANDARD))]
     """
+
     async def _guard(current_user: User = Depends(get_current_user)) -> User:
         if current_user.type not in allowed_types:
             raise HTTPException(
@@ -80,7 +83,6 @@ def require_user_type(*allowed_types: UserType):
         return current_user
 
     return _guard
-
 
 
 get_current_standard_user = require_user_type(UserType.STANDARD)
@@ -93,16 +95,11 @@ def require_permission(permission: str):
         current_user: User = Depends(get_current_user),
         credentials: HTTPAuthorizationCredentials = Security(bearer),
     ) -> User:
-
         token = _extract_token(credentials)
 
-        payload = TokenService().decode_token(token)  
+        payload = TokenService().decode_token(token)
 
-
-        
-        user_permissions = [
-            p.strip().upper() for p in payload.get("permissions", [])
-        ]
+        user_permissions = [p.strip().upper() for p in payload.get("permissions", [])]
 
         if permission.upper() not in user_permissions:
             raise PermissionDenied()
@@ -117,17 +114,11 @@ def require_permission_admin(permission: str):
         current_user: User = Depends(get_current_admin_user),
         credentials: HTTPAuthorizationCredentials = Security(bearer),
     ) -> User:
-
         token = _extract_token(credentials)
 
-        payload = TokenService().decode_token(token)  
+        payload = TokenService().decode_token(token)
 
-
-        
-        user_permissions = [
-            p.strip().upper() for p in payload.get("permissions", [])
-        ]
-
+        user_permissions = [p.strip().upper() for p in payload.get("permissions", [])]
 
         if permission.upper() not in user_permissions:
             raise PermissionDenied()

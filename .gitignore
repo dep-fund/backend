@@ -222,3 +222,7 @@ override.tf.json
 # Backup scripts
 *.dump
 *.sql
+
+
+#postgressql
+postgresql.conf
