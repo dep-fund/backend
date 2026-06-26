@@ -40,7 +40,7 @@ data:
           "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
           "targets": [
             {
-              "expr": "(sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) * 100) or 0",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) * 100",
               "legendFormat": "Error %"
             }
           ],
@@ -194,7 +194,7 @@ data:
           "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "(sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) by (path) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) by (path) * 100) or 0",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) by (path) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) by (path) * 100",
               "legendFormat": "{{path}}"
             }
           ],
