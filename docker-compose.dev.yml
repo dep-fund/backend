@@ -29,7 +29,7 @@ services:
       - |
         forge script script/DeployMockUSDC.s.sol:DeployMockUSDC --rpc-url http://anvil:8545/ --private-key $$PRIVATE_KEY --broadcast &&
         forge script script/Deploy.s.sol:Deploy --rpc-url http://anvil:8545/ --private-key $$PRIVATE_KEY --broadcast
-
+        
   backend:
     depends_on:
       anvil:

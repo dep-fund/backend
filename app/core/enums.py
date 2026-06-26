@@ -37,3 +37,13 @@ class TransactionType(str, Enum):
     SELL = "SELL"
     DIVIDEND = "DIVIDEND"
     INVESTMENT = "INVESTMENT"
+
+class PublicationStatus(str, Enum):
+    active = "active"
+    completed = "completed"
+    canceled = "canceled"
+
+class TradeStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    failed = "failed"

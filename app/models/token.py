@@ -7,6 +7,7 @@ from app.core.database import Base
 
 if TYPE_CHECKING:
     from app.models.token_project import TokenProject
+    from app.models.publication import Publication
 
 
 class Token(Base):
@@ -19,6 +20,9 @@ class Token(Base):
     suffix: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
     contract_address: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False
+    )
+    publications: Mapped[list["Publication"]] = relationship(
+        "Publication", back_populates="token"
     )
 
     token_projects: Mapped[list["TokenProject"]] = relationship(
