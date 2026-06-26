@@ -40,7 +40,7 @@ data:
           "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
           "targets": [
             {
-              "expr": "(sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) * 100) or 0",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) * 100",
               "legendFormat": "Error %"
             }
           ],
@@ -194,7 +194,7 @@ data:
           "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "(sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) by (path) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) by (path) * 100) or 0",
+              "expr": "sum(rate(http_requests_total{job=\"depfund-backend\",status=~\"5..\"}[5m])) by (path) / sum(rate(http_requests_total{job=\"depfund-backend\"}[5m])) by (path) * 100",
               "legendFormat": "{{path}}"
             }
           ],
@@ -215,12 +215,12 @@ data:
           ]
         },
         {
-          "title": "Error logs (Loki)",
+          "title": "Backend logs (Loki)",
           "type": "logs",
           "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
           "targets": [
             {
-              "expr": "{app=\"depfund-backend\"} |= \"error\"",
+              "expr": "{app=\"depfund-backend\"} | json | client_ip!~\"^10\\\\..*|^192\\\\.168\\\\..*\"",
               "legendFormat": "",
               "datasource": "Loki"
             }
@@ -378,11 +378,11 @@ data:
           "gridPos": {"x": 12, "y": 5, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "rate(pg_stat_database_xact_commit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_xact_commit{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Commits"
             },
             {
-              "expr": "rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Rollbacks"
             }
           ],
@@ -399,19 +399,19 @@ data:
           "gridPos": {"x": 0, "y": 13, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "rate(pg_stat_database_tup_fetched{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_tup_fetched{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Fetched"
             },
             {
-              "expr": "rate(pg_stat_database_tup_inserted{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_tup_inserted{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Inserted"
             },
             {
-              "expr": "rate(pg_stat_database_tup_updated{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_tup_updated{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Updated"
             },
             {
-              "expr": "rate(pg_stat_database_tup_deleted{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_tup_deleted{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Deleted"
             }
           ],
@@ -445,34 +445,62 @@ data:
         },
         {
           "title": "Top 10 tables by size",
-          "type": "bargauge",
+          "type": "table",
           "gridPos": {"x": 0, "y": 21, "w": 12, "h": 8},
           "targets": [
             {
               "expr": "topk(10, pg_stat_user_tables_table_size_bytes{job=\"postgres-exporter\"})",
-              "legendFormat": "{{relname}}"
+              "legendFormat": "{{relname}}",
+              "format": "table",
+              "instant": true
             }
+          ],
+          "transformations": [
+            {"id": "organize", "options": {
+              "excludeByName": {"Time": true, "job": true, "instance": true, "__name__": true},
+              "renameByName": {"Value #A": "Size", "relname": "Table"}
+            }}
           ],
           "fieldConfig": {
             "defaults": {
               "unit": "bytes",
-              "color": {"mode": "palette-classic"}
+              "custom": {"displayMode": "color-background"},
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [
+                {"color": "green", "value": null},
+                {"color": "orange", "value": 100000000},
+                {"color": "red", "value": 500000000}
+              ]}
             }
           }
         },
         {
           "title": "Top 10 tables by dead tuples",
-          "type": "bargauge",
+          "type": "table",
           "gridPos": {"x": 12, "y": 21, "w": 12, "h": 8},
           "targets": [
             {
               "expr": "topk(10, pg_stat_user_tables_n_dead_tup{job=\"postgres-exporter\"})",
-              "legendFormat": "{{relname}}"
+              "legendFormat": "{{relname}}",
+              "format": "table",
+              "instant": true
             }
+          ],
+          "transformations": [
+            {"id": "organize", "options": {
+              "excludeByName": {"Time": true, "job": true, "instance": true, "__name__": true},
+              "renameByName": {"Value #A": "Dead Tuples", "relname": "Table"}
+            }}
           ],
           "fieldConfig": {
             "defaults": {
-              "color": {"mode": "palette-classic"}
+              "custom": {"displayMode": "color-background"},
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [
+                {"color": "green", "value": null},
+                {"color": "orange", "value": 1000},
+                {"color": "red", "value": 10000}
+              ]}
             }
           }
         },
@@ -482,11 +510,11 @@ data:
           "gridPos": {"x": 0, "y": 29, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "rate(pg_stat_database_blks_hit{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Blocks hit"
             },
             {
-              "expr": "rate(pg_stat_database_blks_read{job=\"postgres-exporter\",datname=\"neondb\"}[5m])",
+              "expr": "sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\",datname=\"neondb\"}[5m]))",
               "legendFormat": "Blocks read"
             }
           ],
@@ -502,7 +530,7 @@ data:
           "gridPos": {"x": 12, "y": 29, "w": 12, "h": 8},
           "targets": [
             {
-              "expr": "pg_wal_size_bytes{job=\"postgres-exporter\"}",
+              "expr": "sum(pg_wal_size_bytes{job=\"postgres-exporter\"})",
               "legendFormat": "WAL size"
             }
           ],
@@ -514,12 +542,12 @@ data:
           }
         },
         {
-          "title": "Slow queries from Loki",
+          "title": "PostgreSQL logs (Loki)",
           "type": "logs",
           "gridPos": {"x": 0, "y": 37, "w": 24, "h": 8},
           "targets": [
             {
-              "expr": "{namespace=\"depfund\",container=\"postgres\"} |= \"duration\"",
+              "expr": "{namespace=\"depfund\",container=\"postgres\"}",
               "legendFormat": "",
               "datasource": "Loki"
             }

@@ -150,12 +150,12 @@
       }
     },
     {
-      "title": "Error logs (Loki)",
+      "title": "Backend logs (Loki)",
       "type": "logs",
       "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
       "targets": [
         {
-          "expr": "{job=~\"depfund-backend|.*backend.*\"} |= \"error\" |= \"\"",
+          "expr": "{app=\"depfund-backend\"} | json | client_ip!~\"^10\\\\..*|^192\\\\.168\\\\..*\"",
           "legendFormat": "",
           "datasource": "Loki"
         }
@@ -223,12 +223,12 @@
       }
     },
     {
-      "title": "Recent 10 error logs",
+      "title": "Recent 10 backend logs",
       "type": "logs",
       "gridPos": {"x": 12, "y": 20, "w": 12, "h": 8},
       "targets": [
         {
-          "expr": "{job=~\"depfund-backend|.*backend.*\"} |= \"error\"",
+          "expr": "{app=\"depfund-backend\"} | json | client_ip!~\"^10\\\\..*|^192\\\\.168\\\\..*\"",
           "legendFormat": "",
           "datasource": "Loki",
           "maxLines": 10
