@@ -23,7 +23,7 @@ from app.exceptions.users.user_exceptions import (
     EmailAlreadyRegistered,
     UserNotFound,
     WrongCurrentPassword,
-    minorAge,
+    MinorAge,
 )
 
 from datetime import date
@@ -78,7 +78,7 @@ class StandardUserService:
         if await self._user_service.get_by_email(data.email):
             raise EmailAlreadyRegistered()
         if data.birthdate is None:
-            raise minorAge()
+            raise MinorAge()
         today = date.today()
         age = (
             today.year
@@ -86,7 +86,7 @@ class StandardUserService:
             - ((today.month, today.day) < (data.birthdate.month, data.birthdate.day))
         )
         if age < 18:
-            raise minorAge()
+            raise MinorAge()
         role = await RoleService(self.session).get_by_type(UserType.STANDARD)
 
         user = User(

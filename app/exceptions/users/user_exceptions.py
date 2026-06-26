@@ -27,7 +27,7 @@ class WrongCurrentPassword(ExceptionHandler):
     blocker = True
 
 
-class minorAge(ExceptionHandler):
+class MinorAge(ExceptionHandler):
     code = status.HTTP_400_BAD_REQUEST
     message = "The user is minor age"
     blocker = True
