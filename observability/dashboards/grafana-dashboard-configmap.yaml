@@ -220,7 +220,7 @@ data:
           "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
           "targets": [
             {
-              "expr": "{app=\"depfund-backend\"}",
+              "expr": "{app=\"depfund-backend\"} | json | client_ip!~\"^10\\\\..*|^192\\\\.168\\\\..*\"",
               "legendFormat": "",
               "datasource": "Loki"
             }
