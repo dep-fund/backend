@@ -1,7 +1,10 @@
+import logging
 import time
 from app.services.blockchain.base_contract_service import BaseContractService
 from app.services.blockchain.deployment import DeploymentReaderProduction
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class DpfTokenService(BaseContractService):
@@ -12,7 +15,7 @@ class DpfTokenService(BaseContractService):
         super().__init__(address=address)
 
     def create_project_token(self, name: str, suffix: str, supply: int) -> str:
-        print("SUPPLY", supply)
+        logger.info("SUPPLY %s", supply)
         addresses = DeploymentReaderProduction.get_addresses()
         receipt = self.transact(
             "createProjectToken",
@@ -30,24 +33,24 @@ class DpfTokenService(BaseContractService):
 
     def set_offering(self, token_address: str, offering_address: str):
         self._contract = self.client.get_contract("DpfToken", token_address)
-        print("SET OFFERING contract address:", self._contract.address)
-        print("SET OFFERING to:", offering_address)
+        logger.info("SET OFFERING contract address: %s", self._contract.address)
+        logger.info("SET OFFERING to: %s", offering_address)
         receipt = self.transact("setOffering", offering_address)
-        print("SET OFFERING receipt:", receipt)
+        logger.info("SET OFFERING receipt: %s", receipt)
 
     def set_dividends(self, token_address: str, dividends_address: str):
         self._contract = self.client.get_contract("DpfToken", token_address)
-        print("SET DIVIDENDS contract address:", self._contract.address)
-        print("SET DIVIDENDS to:", dividends_address)
+        logger.info("SET DIVIDENDS contract address: %s", self._contract.address)
+        logger.info("SET DIVIDENDS to: %s", dividends_address)
         receipt = self.transact("setDividends", dividends_address)
-        print("SET DIVIDENDS receipt:", receipt)
+        logger.info("SET DIVIDENDS receipt: %s", receipt)
 
     def transfer_to_offering(
         self, token_address: str, offering_address: str, amount: int
     ):
         self._contract = self.client.get_contract("DpfToken", token_address)
         receipt = self.transact("transfer", offering_address, amount * 10**18)
-        print("TRANSFER TO OFFERING receipt:", receipt)
+        logger.info("TRANSFER TO OFFERING receipt: %s", receipt)
 
     def wait_for_offering_set(
         self, token_address: str, offering_address: str, timeout: int = 30

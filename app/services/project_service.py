@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from decimal import Decimal
 from typing import List, Tuple
 from uuid import UUID
@@ -16,6 +17,8 @@ from app.schemas.project import (
     ProjectResponse,
     ProjectUpdateAdminRequest,
 )
+
+logger = logging.getLogger(__name__)
 
 from app.exceptions.project import (
     ProjectNameAlreadyExists,
@@ -209,8 +212,8 @@ class ProjectService:
     async def evaluate(
         self, project_id: UUID, admin_id: UUID, is_approved: bool, reason: str = None
     ) -> ProjectResponse:
-        print("MARKETPLACE: ", settings.MARKETPLACE_ADDRESS)
-        print("FACTORY: ", settings.FACTORY_ADDRESS)
+        logger.info("MARKETPLACE: %s", settings.MARKETPLACE_ADDRESS)
+        logger.info("FACTORY: %s", settings.FACTORY_ADDRESS)
         project = await self.session.scalar(
             self._base_query()
             .options(selectinload(Project.user))
@@ -280,10 +283,7 @@ class ProjectService:
                 project_id=project_id,
                 total_supply=Decimal(settings.PROJECT_TOKEN_SUPPLY),
             )
-            print("Deployed, Addresses: ")
-            print("TOKEN: ", token_address)
-            print("OFFERING: ", offering_address)
-            print("DIVIDEND: ", dividend_address)
+            logger.info("Deployed, Addresses: TOKEN=%s OFFERING=%s DIVIDEND=%s", token_address, offering_address, dividend_address)
         else:
             project.state = ProjectState.REJECTED
             new_state = ProjectState.REJECTED
