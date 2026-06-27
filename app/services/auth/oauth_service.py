@@ -1,3 +1,5 @@
+from datetime import date
+
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -90,6 +92,7 @@ class OAuthService:
             username=username,
             name=google_user.get("given_name", ""),
             last_name=google_user.get("family_name", ""),
+            birthdate=date(1900, 1, 1),
             email=email,
             password=None,
             image=google_user.get("picture"),
