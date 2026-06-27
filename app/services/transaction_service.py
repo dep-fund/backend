@@ -10,6 +10,8 @@ from app.exceptions.transaction import (
 )
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionResponse
+from sqlalchemy import select
+from app.models.wallet import Wallet
 
 
 class TransactionService:
@@ -68,3 +70,16 @@ class TransactionService:
             wallet_id=wallet_id,
             project_id=project_id,
         )
+
+    async def get_history(self, user_id: UUID) -> list[TransactionResponse]:
+        stmt = (
+            select(Transaction)
+            .join(Transaction.wallet)
+            .where(Wallet.user_id == user_id)
+            .order_by(Transaction.created_at.desc())
+        )
+
+        result = await self.session.execute(stmt)
+        transactions = result.scalars().all()
+
+        return [TransactionResponse.model_validate(tx) for tx in transactions]

@@ -6,6 +6,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.core.enums import TransactionType
 
+from datetime import datetime
+from sqlalchemy import DateTime, func
+
+
 if TYPE_CHECKING:
     from app.models.wallet import Wallet
     from app.models.project import Project
@@ -31,4 +35,14 @@ class Transaction(Base):
     wallet: Mapped["Wallet"] = relationship("Wallet", back_populates="transactions")
     project: Mapped[Optional["Project"]] = relationship(
         "Project", back_populates="transactions"
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
