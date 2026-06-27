@@ -11,14 +11,16 @@ from sqlalchemy.orm import selectinload
 from app.core.enums import ProjectState
 from app.models.project import Project
 from app.models.token import Token
+from app.models.user import User
 from app.schemas.project import (
+    DeveloperProjectSummary,
+    DeveloperResponse,
     ProjectCreateRequest,
     ProjectUpdateRequest,
     ProjectResponse,
     ProjectUpdateAdminRequest,
 )
 
-logger = logging.getLogger(__name__)
 
 from app.exceptions.project import (
     ProjectNameAlreadyExists,
@@ -36,6 +38,8 @@ from app.services.category_service import CategoryService
 from app.services.mail_service import MailService
 from app.core.config import settings
 from app.services.token_service import TokenContractService
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectService:
@@ -184,14 +188,42 @@ class ProjectService:
         query = self._base_query().where(Project.user_id == user_id)
         return await self._paginate(query, page, page_size)
 
-    async def get_approved(self, project_id: UUID, user_id: UUID) -> ProjectResponse:
-        """Access: only for your own projects; if you are not the owner, only return the project if they are approved."""
-        project = await self._get_project(project_id)
+    async def get_approved(self, project_id: UUID) -> ProjectResponse:
+        query = (
+            select(Project)
+            .where(Project.id == project_id, Project.state == ProjectState.APPROVED)
+            .options(
+                selectinload(Project.categories),
+                selectinload(Project.user).selectinload(User.projects),
+            )
+        )
+        project = await self.session.scalar(query)
+        if not project:
+            raise ProjectNotFound()
 
-        if project.user_id == user_id or project.state == ProjectState.APPROVED:
-            return ProjectResponse.model_validate(project)
+        developer = project.user
+        approved_related = [
+            p
+            for p in developer.projects
+            if p.state == ProjectState.APPROVED and p.id != project.id
+        ]
 
-        raise UnauthorizedProjectAccess()
+        developer_data = DeveloperResponse(
+            id=developer.id,
+            username=developer.username,
+            name=developer.name,
+            last_name=developer.last_name,
+            email=developer.email,
+            image=developer.image,
+            birthdate=developer.birthdate,
+            projects=[
+                DeveloperProjectSummary.model_validate(p) for p in approved_related
+            ],
+        )
+
+        response = ProjectResponse.model_validate(project)
+        response.developer = developer_data
+        return response
 
     async def explore(
         self, page: int = 1, page_size: int = 10
@@ -283,7 +315,12 @@ class ProjectService:
                 project_id=project_id,
                 total_supply=Decimal(settings.PROJECT_TOKEN_SUPPLY),
             )
-            logger.info("Deployed, Addresses: TOKEN=%s OFFERING=%s DIVIDEND=%s", token_address, offering_address, dividend_address)
+            logger.info(
+                "Deployed, Addresses: TOKEN=%s OFFERING=%s DIVIDEND=%s",
+                token_address,
+                offering_address,
+                dividend_address,
+            )
         else:
             project.state = ProjectState.REJECTED
             new_state = ProjectState.REJECTED
