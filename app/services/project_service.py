@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import or_, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -188,15 +188,26 @@ class ProjectService:
         query = self._base_query().where(Project.user_id == user_id)
         return await self._paginate(query, page, page_size)
 
-    async def get_approved(self, project_id: UUID) -> ProjectResponse:
+    async def get_approved(
+        self,
+        project_id: UUID,
+        current_user_id: UUID,
+    ) -> ProjectResponse:
         query = (
             select(Project)
-            .where(Project.id == project_id, Project.state == ProjectState.APPROVED)
+            .where(
+                Project.id == project_id,
+                or_(
+                    Project.state == ProjectState.APPROVED,
+                    Project.user_id == current_user_id,
+                ),
+            )
             .options(
                 selectinload(Project.categories),
                 selectinload(Project.user).selectinload(User.projects),
             )
         )
+
         project = await self.session.scalar(query)
         if not project:
             raise ProjectNotFound()
