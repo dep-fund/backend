@@ -45,7 +45,7 @@ class WalletService:
         self, address: str, current_user: StandardUser
     ) -> WalletResponse:
         wallet = await self.session.scalar(
-            select(Wallet).where(Wallet.address == address)
+            select(Wallet).where(Wallet.address == address.lower())
         )
         if not wallet:
             raise WalletNotFound()

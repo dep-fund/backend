@@ -104,8 +104,7 @@ class InvestmentService:
         self.session.add(investment)
         await self.session.commit()
         await self.session.refresh(investment)
-
-        TransactionService.create_investment(
+        await TransactionService(self.session).create_investment(
             tx_hash=data.tx_hash,
             wallet_id=data.wallet_id,
             project_id=project_id,
