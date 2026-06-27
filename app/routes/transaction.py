@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -20,3 +21,14 @@ async def get_history(
     session: AsyncSession = Depends(get_session),
 ):
     return await TransactionService(session).get_history(current_user.id)
+
+
+@router.get("/projects/{project_id}/dividends/history")
+async def get_dividend_history(
+    project_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_standard_user),
+):
+    return await TransactionService(session).get_dividend_history_by_project(
+        project_id, current_user.id
+    )
