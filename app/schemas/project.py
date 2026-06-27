@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional, List
 from uuid import UUID
 from decimal import Decimal
@@ -7,6 +7,27 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import ProjectState, RiskLevel
 from app.schemas.category import CategoryResponse
+
+
+class DeveloperProjectSummary(BaseModel):
+    id: UUID
+    name: str
+    suffix: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DeveloperResponse(BaseModel):
+    id: UUID
+    username: str
+    name: str
+    last_name: str
+    email: str
+    image: Optional[str] = None
+    birthdate: date
+    projects: List[DeveloperProjectSummary] = []
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectCreateRequest(BaseModel):
@@ -64,5 +85,6 @@ class ProjectResponse(BaseModel):
     suffix: Optional[str] = None
     dividend_address: Optional[str] = None
     offering_address: Optional[str] = None
+    developer: Optional[DeveloperResponse] = None
 
     model_config = ConfigDict(from_attributes=True)

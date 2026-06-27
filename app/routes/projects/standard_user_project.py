@@ -85,4 +85,4 @@ async def get_project(
     current_user: User = Depends(get_current_standard_user),
     session: AsyncSession = Depends(get_session),
 ):
-    return await ProjectService(session).get_approved(project_id, current_user.id)
+    return await ProjectService(session).get_approved(project_id)

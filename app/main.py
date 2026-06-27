@@ -49,6 +49,7 @@ from app.routes.admin_reports import router as admin_reports_router
 from app.routes.publication import router as publications_router
 from app.routes.trades import router as trades_router
 from app.routes.investment import router as investment_router
+from app.routes.transaction import router as transaction_router
 
 logger = logging.getLogger(__name__)
 setup_logging()
@@ -126,6 +127,7 @@ api_v1.include_router(admin_project_images)
 api_v1.include_router(health_router)
 api_v1.include_router(admin_dividends)
 api_v1.include_router(admin_reports_router)
+api_v1.include_router(transaction_router)
 
 app.include_router(auth_router)
 app.include_router(oauth_router)
@@ -154,5 +156,6 @@ app.include_router(admin_project_document)
 app.include_router(admin_project_images)
 app.include_router(admin_dividends)
 app.include_router(admin_reports_router)
+app.include_router(transaction_router)
 
 app.include_router(api_v1)

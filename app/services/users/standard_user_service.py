@@ -73,7 +73,11 @@ class StandardUserService:
         return total or 0, [StandardUserResponse.model_validate(u) for u in users]
 
     async def register(self, data: StandardUserRegisterRequest) -> StandardUserResponse:
-        if await self._user_service.get_by_username(data.username):
+        username = data.username.strip()
+        name = data.name.strip()
+        last_name = data.last_name.strip()
+
+        if await self._user_service.get_by_username(username):
             raise UsernameAlreadyTaken()
         if await self._user_service.get_by_email(data.email):
             raise EmailAlreadyRegistered()
@@ -89,9 +93,9 @@ class StandardUserService:
         role = await RoleService(self.session).get_by_type(UserType.STANDARD)
 
         user = User(
-            username=data.username,
-            name=data.name,
-            last_name=data.last_name,
+            username=username,
+            name=name,
+            last_name=last_name,
             birthdate=data.birthdate,
             email=data.email,
             password=hash_password(data.password),
