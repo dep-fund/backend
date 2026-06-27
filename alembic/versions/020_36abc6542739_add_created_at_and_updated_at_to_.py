@@ -1,7 +1,7 @@
 """add created_at and updated_at to transaction
 
 Revision ID: 36abc6542739
-Revises: 5e86901756f8
+Revises: 2388c1fdae77
 Create Date: 2026-06-27 01:04:53.117754
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "36abc6542739"
-down_revision: Union[str, Sequence[str], None] = "5e86901756f8"
+down_revision: Union[str, Sequence[str], None] = "2388c1fdae77"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
