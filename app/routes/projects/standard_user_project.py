@@ -80,9 +80,9 @@ async def explore_projects(
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-async def get_project(
+async def get_project_approved(
     project_id: UUID,
     current_user: User = Depends(get_current_standard_user),
     session: AsyncSession = Depends(get_session),
 ):
-    return await ProjectService(session).get_approved(project_id)
+    return await ProjectService(session).get_approved(project_id, current_user.id)
