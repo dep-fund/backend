@@ -22,7 +22,6 @@ from app.schemas.investment import (
 )
 
 from app.services.transaction_service import TransactionService
-from app.services.wallet_service import WalletService
 
 
 class InvestmentService:
@@ -108,7 +107,7 @@ class InvestmentService:
 
         TransactionService.create_investment(
             tx_hash=data.tx_hash,
-            wallet_id=WalletService._get(data.wallet_id),
+            wallet_id=data.wallet_id,
             project_id=project_id,
         )
         return InvestmentResponse.model_validate(investment)
