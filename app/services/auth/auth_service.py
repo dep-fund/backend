@@ -34,7 +34,7 @@ class AuthService:
         self, data: LoginRequest, allowed_type: Optional[UserType] = None
     ) -> TokenResponse:
         user = await UserService(self.session).get_with_role_and_permissions(
-            data.identifier
+            data.identifier.strip()
         )
 
         if (
