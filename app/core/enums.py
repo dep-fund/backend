@@ -47,3 +47,7 @@ class TradeStatus(str, Enum):
     pending = "pending"
     confirmed = "confirmed"
     failed = "failed"
+
+class InvestmentSource(str, Enum):
+    offering = "offering"
+    marketplace = "marketplace"

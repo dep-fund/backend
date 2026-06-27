@@ -21,6 +21,8 @@ class ProjectFundraisingDetail(BaseModel):
     tokens_sold: Decimal | None = None
     total_supply: Decimal | None = None
     offering_address: str | None = None
+    offering_fees: Decimal | None = None
+    marketplace_fees: Decimal | None = None
 
 
 class FundraisingSummary(BaseModel):
@@ -30,6 +32,9 @@ class FundraisingSummary(BaseModel):
     total_investors: int
     total_tokens_sold: Decimal | None
     total_investment_tx: int
+    total_offering_fees: Decimal | None = None
+    total_marketplace_fees: Decimal | None = None
+    total_revenue: Decimal | None = None
 
 
 class FundraisingReport(BaseModel):
