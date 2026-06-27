@@ -6,9 +6,12 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.enums import TransactionType
+from app.core.enums import TradeStatus, TransactionType
 from app.models.project import Project
+from app.models.publication import Publication
+from app.models.token import Token
 from app.models.token_project import TokenProject
+from app.models.trade import Trade
 from app.models.transaction import Transaction
 from app.models.wallet import Wallet
 from app.schemas.report import (
@@ -93,6 +96,14 @@ class ReportService:
 
         inv_count, tx_count = await self._get_investment_stats(project.id)
 
+        offering_fees = (
+            (raised_amount * Decimal('0.03')).quantize(Decimal('0.000001'))
+            if raised_amount is not None
+            else None
+        )
+
+        marketplace_fees = await self._get_marketplace_fees(project.id)
+
         return ProjectFundraisingDetail(
             project_id=project.id,
             name=project.name,
@@ -107,6 +118,8 @@ class ReportService:
             tokens_sold=tokens_sold,
             total_supply=total_supply,
             offering_address=offering_address,
+            offering_fees=offering_fees,
+            marketplace_fees=marketplace_fees,
         )
 
     async def _get_investment_stats(self, project_id: UUID) -> tuple[int, int]:
@@ -125,6 +138,23 @@ class ReportService:
         )
 
         return (investor_count or 0), (tx_count or 0)
+
+    async def _get_marketplace_fees(self, project_id: UUID) -> Decimal:
+        subq = (
+            select(Publication.id)
+            .join(Token, Publication.token_id == Token.id)
+            .join(TokenProject, Token.id == TokenProject.token_id)
+            .where(TokenProject.project_id == project_id)
+            .subquery()
+        )
+        result = await self.session.scalar(
+            select(func.sum(Trade.total_price))
+            .where(Trade.publication_id.in_(select(subq.c.id)))
+            .where(Trade.status == TradeStatus.confirmed)
+        )
+        if result is not None:
+            return Decimal(str(result)) * Decimal('0.02')
+        return Decimal(0)
 
     async def _compute_summary(
         self, details: list[ProjectFundraisingDetail]
@@ -155,6 +185,22 @@ class ReportService:
 
         total_tx = sum(d.investment_tx_count for d in details)
 
+        offering_fees_values = [
+            d.offering_fees for d in details if d.offering_fees is not None
+        ]
+        total_offering_fees = (
+            sum(offering_fees_values, Decimal(0)) if offering_fees_values else Decimal(0)
+        )
+
+        marketplace_fees_values = [
+            d.marketplace_fees for d in details if d.marketplace_fees is not None
+        ]
+        total_marketplace_fees = (
+            sum(marketplace_fees_values, Decimal(0)) if marketplace_fees_values else Decimal(0)
+        )
+
+        total_revenue = total_offering_fees + total_marketplace_fees
+
         return FundraisingSummary(
             total_projects=len(details),
             total_goal=total_goal,
@@ -162,4 +208,7 @@ class ReportService:
             total_investors=total_investors_row or 0,
             total_tokens_sold=total_tokens_sold,
             total_investment_tx=total_tx,
+            total_offering_fees=total_offering_fees,
+            total_marketplace_fees=total_marketplace_fees,
+            total_revenue=total_revenue,
         )
