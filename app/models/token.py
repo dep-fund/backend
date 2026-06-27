@@ -8,6 +8,7 @@ from app.core.database import Base
 if TYPE_CHECKING:
     from app.models.token_project import TokenProject
     from app.models.publication import Publication
+    from app.models.investment import Investment
 
 
 class Token(Base):
@@ -28,3 +29,8 @@ class Token(Base):
     token_projects: Mapped[list["TokenProject"]] = relationship(
         "TokenProject", back_populates="token"
     )
+
+    investments: Mapped[list["Investment"]] = relationship(
+        "Investment", back_populates="token"
+    )
+    
