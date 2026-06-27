@@ -45,7 +45,9 @@ async def list_my_investments(
     )
 
 
-@router.get("/project/{project_id}", response_model=PaginatedResponse[InvestmentResponse])
+@router.get(
+    "/project/{project_id}", response_model=PaginatedResponse[InvestmentResponse]
+)
 async def list_project_investments(
     project_id: UUID,
     page: int = Query(1, gt=0),

@@ -11,6 +11,7 @@ class InvestmentCreateRequest(BaseModel):
     token_quantity: Decimal = Field(gt=0)
     unit_price: Decimal = Field(gt=0)
     tx_hash: str | None = None  # hash de la tx ya confirmada en MetaMask
+    wallet_id: UUID
 
 
 class InvestmentResponse(BaseModel):

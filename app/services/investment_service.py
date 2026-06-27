@@ -4,7 +4,6 @@ from uuid import UUID
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.enums import ProjectState, InvestmentSource
 from app.models.investment import Investment
 from app.models.project import Project
@@ -21,6 +20,9 @@ from app.schemas.investment import (
     InvestmentResponse,
     ProjectInvestmentStats,
 )
+
+from app.services.transaction_service import TransactionService
+from app.services.wallet_service import WalletService
 
 
 class InvestmentService:
@@ -104,6 +106,11 @@ class InvestmentService:
         await self.session.commit()
         await self.session.refresh(investment)
 
+        TransactionService.create_investment(
+            tx_hash=data.tx_hash,
+            wallet_id=WalletService._get(data.wallet_id),
+            project_id=project_id,
+        )
         return InvestmentResponse.model_validate(investment)
 
     # ---------- Hooks para Marketplace (llamados desde TradeService) ----------
