@@ -32,3 +32,23 @@ async def get_dividend_history(
     return await TransactionService(session).get_dividend_history_by_project(
         project_id, current_user.id
     )
+
+
+@router.post("/marketplace/buy")
+async def transaction_marketplace_buy(
+    tx_hash: str,
+    wallet_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_standard_user),
+):
+    return await TransactionService(session).create_buy(tx_hash, wallet_id)
+
+
+@router.post("/marketplace/sell")
+async def transaction_marketplace_sell(
+    tx_hash: str,
+    wallet_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_standard_user),
+):
+    return await TransactionService(session).create_sell(tx_hash, wallet_id)
