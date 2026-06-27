@@ -21,8 +21,9 @@ if TYPE_CHECKING:
     from app.models.project import Project
     from app.models.project_evaluation import ProjectEvaluation
     from app.models.wallet import Wallet
-    from app.models.publication import Publication
+    from app.models.publication import Publication  
     from app.models.trade import Trade
+    from app.models.investment import Investment              
 
 
 class User(Base):
@@ -74,6 +75,9 @@ class User(Base):
     )
     trades: Mapped[list["Trade"]] = relationship(
         "Trade", back_populates="buyer", foreign_keys="Trade.buyer_id"
+    )
+    investments: Mapped[list["Investment"]] = relationship(
+        "Investment", back_populates="user"
     )
 
 

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from app.models.project_evaluation import ProjectEvaluation
     from app.models.transaction import Transaction
     from app.models.token_project import TokenProject
+    from app.models.investment import Investment
 
 
 from app.models.project_document import ProjectDocument
@@ -97,4 +98,7 @@ class Project(Base):
     )
     token_project: Mapped[Optional["TokenProject"]] = relationship(
         "TokenProject", back_populates="project", uselist=False
+    )
+    investments: Mapped[list["Investment"]] = relationship(
+        "Investment", back_populates="project"
     )

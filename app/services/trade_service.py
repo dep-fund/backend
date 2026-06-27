@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import PublicationStatus, TradeStatus
@@ -14,11 +15,13 @@ from app.exceptions.marketplace import (
 from app.models.publication import Publication
 from app.models.trade import Trade
 from app.schemas.trade import TradeCreate, TradeResponse
+from app.services.investment_service import InvestmentService   
 
 
 class TradeService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+        self._investment_service = InvestmentService(session)  
 
     async def create_trade(self, data: TradeCreate, buyer_id: UUID) -> TradeResponse:
         publication = await self.session.scalar(
@@ -53,9 +56,31 @@ class TradeService:
         return TradeResponse.model_validate(trade)
 
     async def confirm_trade(self, trade_id: UUID, tx_hash: str) -> TradeResponse:
-        trade = await self.session.scalar(select(Trade).where(Trade.id == trade_id))
+        trade = await self.session.scalar(
+            select(Trade)
+            .options(selectinload(Trade.publication))
+            .where(Trade.id == trade_id)
+        )
         if not trade:
             raise TradeNotFound()
+
+        publication = trade.publication
+
+        # 1. Descontar holdings del vendedor (FIFO sobre sus Investment activas)
+        await self._investment_service.consume_holdings(
+            user_id=publication.seller_id,
+            token_id=publication.token_id,
+            amount=trade.amount,
+        )
+
+        # 2. Crear el Investment del comprador
+        await self._investment_service.register_marketplace_purchase(
+            buyer_id=trade.buyer_id,
+            token_id=publication.token_id,
+            amount=trade.amount,
+            unit_price=publication.price_per_token,
+            tx_hash=tx_hash,
+        )
 
         trade.status = TradeStatus.confirmed
         trade.tx_hash = tx_hash
